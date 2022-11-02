@@ -1,0 +1,16 @@
+{
+  "name": "tree-sitter-universql",
+  "version": "0.1.0",
+  "description": "Universal SQL grammar for tree-sitter",
+  "main": "bindings/node",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "parser",
+    "sql",
+    "tree-sitter"
+  ],
+  "author": "SuperBo <supernbo@gmail.com> (https://github.com/SuperBo)",
+  "license": "MIT"
+}

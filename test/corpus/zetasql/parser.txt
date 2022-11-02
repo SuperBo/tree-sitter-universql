@@ -1,0 +1,261 @@
+========
+Select 1
+========
+
+select 1;
+
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal))))))
+
+==========================
+Select 1 with hash comment
+==========================
+
+select 1; # NBSP
+
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal)))))
+  (comment))
+
+===========================
+Select with various comment
+===========================
+
+select
+# full line comment
+/* block
+   comment */
+-- full line comment
+1# partial line comment
++-- partial line comment
+2/*partial line block comment*/+3;
+--
+
+---
+(multistmt
+  (select
+    (select_spec
+      (comment)
+      (comment)
+      (comment)
+      select_list: (select_list
+        (select_item
+          (binary_expr
+            (binary_expr
+              (integer_literal)
+              (comment)
+              (comment)
+              (integer_literal))
+            (comment)
+            (integer_literal))))))
+  (comment))
+
+=================
+incorrect comment
+=================
+
+select /* incorrect
+block
+ */ comment */ 1
+
+---
+(multistmt
+  (select
+    (select_spec
+      (comment)
+      select_list: (select_list
+        (select_item
+          (binary_expr
+            (path_expr
+              (identifier ))
+            (ERROR)
+            (integer_literal)))))))
+
+===========
+empty input
+===========
+
+# This is an empty input.
+
+---
+(ERROR (comment))
+
+=============
+empty input 2
+=============
+
+-- Comment without query. Should give an error in the parser.
+
+---
+
+(ERROR (comment))
+
+=================
+multiple comments
+=================
+
+select--comment
+--comment
+1 -- comment
++--
+2--comment
+
+---
+
+(multistmt
+  (select
+    (select_spec
+      (comment)
+      (comment)
+      (select_list
+        (select_item
+          (binary_expr
+            (integer_literal)
+            (comment)
+            (comment)
+            (integer_literal))))))
+    (comment))
+
+==================
+"--" with no space
+==================
+
+select --
+5
+
+---
+
+(multistmt
+  (select
+    (select_spec
+      (comment)
+      (select_list
+        (select_item (integer_literal))))))
+
+
+==================
+"-- " with a space
+==================
+
+select -- 
+5
+
+---
+(multistmt
+  (select
+    (select_spec
+      (comment)
+      (select_list
+        (select_item (integer_literal))))))
+
+======
+"--" 1
+======
+
+select --1
+
+---
+
+(ERROR (comment))
+
+======
+"---"
+======
+
+select --- 1
+2
+
+---
+(multistmt
+  (select
+    (select_spec
+      (comment)
+      (select_list
+        (select_item
+          (integer_literal))))))
+
+============
+Double minus
+============
+
+select - - 1
+
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (unary_expr
+            (unary_expr (integer_literal))))))))
+
+==========
+Many minus
+==========
+
+select - - - -1
+
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (unary_expr (unary_expr (unary_expr (unary_expr (integer_literal))))))))))
+
+==========================
+No comments inside strings
+==========================
+
+SELECT
+  "abc -- def",
+  "abc # def",
+  "abc /* def */ ghi"
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (string_literal))
+        (select_item (string_literal))
+        (select_item (string_literal))
+      ))))
+
+==================
+No nested comments
+==================
+
+select /* no nested comments # -- /* */ 1;
+---
+(multistmt
+  (select
+    (select_spec
+      (comment)
+      (select_list
+        (select_item (integer_literal))))))
+
+=============
+Simple select
+=============
+
+SELECT f1, f2 FROM T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))
+        (select_item (path_expr (identifier))))
+      (from_list
+        (table_ref
+          (path_expr (identifier)))))))
