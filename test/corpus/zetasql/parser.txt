@@ -259,3 +259,1277 @@ SELECT f1, f2 FROM T
       (from_list
         (table_ref
           (path_expr (identifier)))))))
+
+=================
+Explain statement
+=================
+
+explain select 1;
+---
+(multistmt
+  (explain
+    (select
+      (select_spec
+        (select_list
+          (select_item (integer_literal)))))))
+
+=================
+Quoted identifier
+=================
+
+select f1, `f 2` from T where b;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))
+        (select_item (path_expr (identifier))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (path_expr (identifier)))))
+
+====================
+Select from subquery
+====================
+
+select f1, f2 from (select 1 f1, "b" f2);
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))
+        (select_item (path_expr (identifier))))
+    (from_list
+      (table_ref
+        (subquery_table
+          (select
+            (select_spec
+              (select_list
+                (select_item (integer_literal) (identifier))
+                (select_item (string_literal) (identifier)))))))))))
+
+==========================
+Select from two subqueries
+==========================
+
+select f1 from (select 1 f1) AS subquery_alias_1, (select 1 f1) subquery_alias_2
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list 
+        (select_item (path_expr (identifier))))
+      (from_list
+        (table_ref
+          (subquery_table
+            (select
+              (select_spec
+                (select_list
+                  (select_item (integer_literal) (identifier))))))
+          (identifier))
+        (table_ref
+          (subquery_table
+            (select
+              (select_spec
+                (select_list
+                  (select_item (integer_literal) (identifier))))))
+          (identifier))))))
+
+====================
+Select function call
+====================
+
+select hll_count.extract(hll_count.merge(foo)) from bar;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier) (identifier))
+              (func_arg_list
+                (func_expr
+                  (func_app
+                    (path_expr (identifier) (identifier))
+                    (func_arg_list
+                      (path_expr (identifier))))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+======================
+Select function call 2
+======================
+
+select d3a_count.extract(d3a_count.merge(foo)) from bar;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier) (identifier))
+              (func_arg_list
+                (func_expr
+                  (func_app
+                    (path_expr (identifier) (identifier))
+                    (func_arg_list
+                      (path_expr (identifier))))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==================
+Select logical and
+==================
+
+select a AND b from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier)))))
+     (from_list
+       (table_ref (path_expr (identifier))))))) 
+
+========================
+Select function bin expr
+========================
+
+select f(x + y) from A;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (binary_expr
+                  (path_expr (identifier))
+                  (path_expr (identifier))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Select function 3
+=================
+
+select count(abc.def), count(*), anon_count(*, 0, 1) from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier) (identifier))))))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (star)))))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (star)
+                (integer_literal)
+                (integer_literal))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Select function 4
+=================
+
+select a.b.f(x.y) from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier) (identifier) (identifier))
+              (func_arg_list (path_expr (identifier) (identifier)))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Select function 5
+=================
+
+select *, a.b.f(x.y) from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (star))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier) (identifier) (identifier))
+              (func_arg_list
+                (path_expr (identifier) (identifier)))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+======================
+Select nested function
+======================
+
+select f(g(x)), f(1), h() AS foo from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (func_expr
+                  (func_app
+                    (path_expr (identifier))
+                    (func_arg_list (path_expr (identifier)))))))))
+        (select_item
+          (func_expr
+            (func_app (path_expr (identifier)) (func_arg_list (integer_literal)))))
+        (select_item
+          (func_expr
+            (func_app (path_expr (identifier))))
+          (identifier)))
+    (from_list
+      (table_ref
+        (path_expr (identifier)))))))
+
+=======================================================
+Parenthesized path expressions are not allowed in alias
+=======================================================
+
+select foo AS (path.expression) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (ERROR (path_expr (identifier)))
+      (select_list
+        (select_item
+          (paren_expr (path_expr (identifier) (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==============================================================
+Parenthesized path expressions no dot are not allowed in alias
+==============================================================
+
+select foo AS (path) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (ERROR (path_expr (identifier)))
+      (select_list
+        (select_item
+          (paren_expr (path_expr (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Select function 6
+=================
+
+select f(1, x, "a", true, g(y)) AS bar from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (integer_literal)
+                (path_expr (identifier))
+                (string_literal)
+                (boolean_literal)
+                (func_expr
+                  (func_app
+                    (path_expr (identifier))
+                    (func_arg_list (path_expr (identifier))))))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Select expression
+=================
+
+select -1, +2, NOT a from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (unary_expr (integer_literal)))
+        (select_item (unary_expr (integer_literal)))
+        (select_item (unary_expr (path_expr (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================================
+This is an \n alias on a new line
+=================================
+
+select 1 as `This is an\\n\\talias on a new line.`
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal)
+          (identifier (escape_sequence) (escape_sequence)))))))
+
+====================
+Select special alias
+====================
+
+select 1 as `\\t`, 2 as `\\n`, 3 as `\\010`, 4 as `\\xafh`, 5 as `\\u00045678`,
+       6 as `\\U00045678`, '\\x53' as `\\x54`;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal)
+          (identifier (escape_sequence)))
+        (select_item
+          (integer_literal)
+          (identifier (escape_sequence)))
+        (select_item
+          (integer_literal)
+          (identifier (escape_sequence)))
+        (select_item
+          (integer_literal)
+          (identifier (escape_sequence)))
+        (select_item
+          (integer_literal)
+          (identifier (escape_sequence)))
+        (select_item
+          (integer_literal)
+          (identifier (escape_sequence)))
+        (select_item
+          (string_literal (escape_sequence))
+          (identifier (escape_sequence)))))))
+
+======================
+Select special alias 2
+======================
+
+select '\u1235' as `\u1234`, "\U00012346" as `\U00012345`;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (string_literal (escape_sequence))
+          (identifier (escape_sequence)))
+        (select_item
+          (string_literal (escape_sequence))
+          (identifier (escape_sequence)))))))
+
+================
+Select Safe cast
+================
+
+select safe_cast("1" as int32);
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (string_literal)
+              (type (path_expr (identifier))))))))))
+
+===========
+Select cast
+===========
+
+select cast(x as string(10));
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (path_expr (identifier))
+                (type_param (integer_literal))))))))))
+
+========================
+Select cast with collate
+========================
+
+select cast(x as string collate 'und:ci');
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (path_expr (identifier))
+                (collate_clause (string_literal))))))))))
+
+==========================
+Select cast with collate 2
+==========================
+
+select cast(x as double collate 'und:ci');
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (path_expr (identifier))
+                (collate_clause (string_literal))))))))))
+
+=====================
+Select cast as struct
+=====================
+
+select cast(x as struct<x string collate 'und:ci'>);
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (struct_type
+                  (struct_field
+                    (identifier)
+                    (type
+                      (path_expr (identifier))
+                      (collate_clause (string_literal)))))))))))))
+
+====================
+Select cast as array
+====================
+
+select cast(x as array<string collate 'und:ci'>);
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (array_type
+                  (type
+                    (path_expr (identifier))
+                    (collate_clause (string_literal))))))))))))
+
+================================
+Select cast as array and colalte
+================================
+
+select cast(x as array<string> collate 'und:ci');
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (array_type
+                  (type
+                    (path_expr (identifier))))
+                (collate_clause (string_literal))))))))))
+
+==================
+Select cast quoted
+==================
+
+select safe_cast(`date` as date) from A;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (path_expr (identifier)))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Select cast array
+=================
+
+select safe_cast([1,2,3] as array<string>)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (array_expr
+                (expr_list
+                  (integer_literal)
+                  (integer_literal)
+                  (integer_literal)))
+              (type
+                (array_type
+                  (type
+                    (path_expr (identifier))))))))))))
+
+=================
+Select multi cast
+=================
+
+select cast("1" as int32),
+       safe_cast(1 as string),
+       cast(t as TimeStamp_Millis),
+       safe_cast(u as TimeStamp_Micros),
+       cast(v as TimeStamp_seconds),
+       safe_cast(w as TimeStamp_nanos),
+       cast(x as `mypackage.myproto`),
+       cast(y as `mypackage.myenum`)
+from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (string_literal)
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (integer_literal)
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier)))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===================
+Select multi cast 2
+===================
+
+select cast(x as foo),
+       cast(x as a.b),
+       cast(x > 5 as timestamp_seconds),
+       cast("1" as `int64`) as cast_1_as_int64,
+       safe_cast(x < 10 as b),
+       cast(x as struct<x int, y double>),
+       cast(x as struct<int, double>),
+       safe_cast(x as struct<x int, y double, string, bytes>)
+from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier) (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (binary_expr (path_expr (identifier)) (integer_literal))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (string_literal)
+              (type (path_expr (identifier)))))
+          (identifier))
+        (select_item
+          (func_expr
+            (cast_expr
+              (binary_expr (path_expr (identifier)) (integer_literal))
+              (type (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (struct_type
+                  (struct_field
+                    (identifier)
+                    (type (path_expr (identifier))))
+                  (struct_field
+                    (identifier)
+                    (type (path_expr (identifier)))))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (struct_type
+                  (struct_field
+                    (type (path_expr (identifier))))
+                  (struct_field
+                    (type (path_expr (identifier)))))))))
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type
+                (struct_type
+                  (struct_field
+                    (identifier)
+                    (type (path_expr (identifier))))
+                  (struct_field
+                    (identifier)
+                    (type (path_expr (identifier))))
+                  (struct_field
+                    (type (path_expr (identifier))))
+                  (struct_field
+                    (type (path_expr (identifier))))))))))
+      (from_list
+            (table_ref (path_expr (identifier))))))) 
+
+============================
+Select cast as string format
+============================
+
+select safe_cast(expr as string format format_string) from t;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier)))
+              (path_expr (identifier))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==============================
+Select cast as string format 2
+==============================
+
+select cast('literal' as int64 format format_string) from t;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (string_literal)
+              (type (path_expr (identifier)))
+              (path_expr (identifier))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+====================
+Select cast datetime
+====================
+
+select CAST(expr AS date FORMAT format_string At tImE ZoNe hour || ':' || minute) from t;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (cast_expr
+              (path_expr (identifier))
+              (type (path_expr (identifier)))
+              (at_expr
+                (path_expr (identifier))
+                (binary_expr
+                  (binary_expr
+                    (path_expr (identifier))
+                    (string_literal))
+                  (path_expr (identifier))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+======================
+Select count, sum func
+======================
+
+select count(*), anon_count(*, 0, 1), count(distinct x), sum(x),
+       sum(distinct x), group_concat(distinct x, '|')
+from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (star)))))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (star) (integer_literal) (integer_literal)))))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list (path_expr (identifier))))))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list (path_expr (identifier)) (string_literal)))))) 
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===================================
+Select reserved word in a path expr
+===================================
+
+select nested1.field1, field2 from table1.with.dots
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier) (identifier)))
+        (select_item
+          (path_expr (identifier))))
+      (from_list
+        (table_ref
+          (path_expr (identifier) (identifier) (identifier)))))))
+
+=======================================
+Select PROTO reserved word in path expr
+=======================================
+
+select nested1.proto
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier) (identifier)))))))
+
+====================
+Select function like
+====================
+
+select f(column.field_name) like 'pattern%';
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (path_expr (identifier) (identifier)))))
+            (string_literal)))))))
+
+==============
+Select IS expr
+==============
+
+select 1 IS NULL
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr (integer_literal) (null)))))))
+
+==================
+Select NOT IS NULL
+==================
+
+select 1 NOT IS NULL;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal)
+          (identifier)))))
+  (ERROR
+    (null)))
+
+===================
+Select NULL IS NULL
+===================
+
+select NULL IS null;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr (null) (null)))))))
+
+===========================
+Select NOT NULL IS NOT NULL
+===========================
+
+select NOT NULL IS NOT NULL
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (unary_expr
+            (compare_expr (null) (null))))))))
+
+============================
+Select NULL IS NOT NULL NULL
+============================
+
+select NULL IS NOT NULL NULL;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr (null) (null))
+          (identifier))))))
+
+============
+Select Where
+============
+
+select 1 from T where TRUE IS NOT TRUE
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (integer_literal)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (compare_expr
+        (boolean_literal) (boolean_literal)))))
+
+==============
+Select WHERE 2
+==============
+
+select 1 from T where TRUE IS NOT FALSE
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (integer_literal)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (compare_expr
+        (boolean_literal) (boolean_literal)))))
+
+==============
+Select WHERE 3
+==============
+
+select FALSE from T where NULL IS TRUE
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (boolean_literal)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (compare_expr
+        (null) (boolean_literal)))))
+
+===================
+Select WHERE x IS y
+===================
+
+select x from T where x IS y
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier))))
+      (from_list (table_ref (path_expr (identifier))))
+      (path_expr (identifier))))
+      (ERROR)) 
+
+=====================
+Select x IS NOT Value
+=====================
+
+select x IS NOT 5;
+---
+(multistmt
+  (select
+     (select_spec
+       (select_list
+         (select_item (path_expr (identifier))))))
+  (ERROR))
+
+====================
+Select where between
+====================
+
+select * from Table1 where col BETWEEN value1 AND value2;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (star)))
+      (from_list (table_ref (path_expr (identifier))))
+      (compare_expr
+        (path_expr (identifier))
+        (path_expr (identifier))
+        (path_expr (identifier))))))
+
+=======================
+Select unbalanced paren
+=======================
+
+select ( foo )), foo;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (paren_expr
+            (path_expr
+              (identifier)))))))
+  (ERROR))
+
+=========================
+Select unbalanced paren 2
+=========================
+
+select (foo)], foo
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (paren_expr
+            (path_expr
+              (identifier))))
+        (ERROR)
+        (select_item
+          (path_expr
+            (identifier)))))))
+
+==================
+Select wrong paren
+==================
+
+select ( x BETWEEN y), foo
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (paren_expr
+          (path_expr (identifier))
+          (ERROR (path_expr (identifier)))))
+        (select_item
+          (path_expr (identifier))))))) 
+
+====================
+Select wrong paren 2
+====================
+
+select [x between y], foo
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_expr
+            (expr_list
+              (path_expr (identifier)))
+            (ERROR
+              (identifier))))
+        (select_item
+          (path_expr (identifier))))))) 
+
+=================
+Select path exprs
+=================
+
+select key, kv.key, kv, (kv).key from KeyValue kv;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))
+        (select_item (path_expr (identifier) (identifier)))
+        (select_item (path_expr (identifier)))
+        (select_item
+          (dot_identifier
+            (paren_expr (path_expr (identifier)))
+            (identifier))))
+      (from_list
+        (table_ref
+          (path_expr (identifier))
+          (identifier))))))
+
+===============
+Select as notin
+===============
+
+select 1 as NOTIN;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal)
+          (identifier))))))
+
+============
+Select NOTIN
+============
+
+SELECT 1 NOTIN (2, 3);
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal)
+          (identifier))
+        (ERROR)
+        (select_item
+          (integer_literal)))))
+  (ERROR))
+
+=================
+Select NOTBETWEEN
+=================
+
+SELECT 1 NOTBETWEEN 1 AND 2;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal)
+          (identifier)))))
+  (ERROR))
+
+================
+Select <> and !=
+================
+
+SELECT 1 <> 1, 1 != 1
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr (integer_literal) (integer_literal)))
+        (select_item
+          (binary_expr (integer_literal) (integer_literal)))))))
+
+======================================
+Various C-style comment corner cases 1
+======================================
+
+/* C-style comment with * in the middle / in the middle */
+SELECT foo;
+---
+(multistmt
+  (comment)
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))))))
+
+======================================
+Various C-style comment corner cases 2
+======================================
+
+/* C-style comment with trailing ***/
+SELECT foo;
+---
+(multistmt
+  (comment)
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))))))
+
+=============================================
+Select parenthesized ORs should not be merged
+=============================================
+
+SELECT (TRUE OR FALSE) OR (FALSE OR TRUE)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (paren_expr
+              (binary_expr (boolean_literal) (boolean_literal)))
+            (paren_expr
+              (binary_expr (boolean_literal) (boolean_literal)))))))))
+
+================================================================
+Comment query ending in an end-of-line comment without a newline
+================================================================
+
+SELECT 1 # End of line comment
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (integer_literal)))))
+  (comment))
+
+=============================
+Select paren in function call
+=============================
+
+select (foo.bar)(DISTINCT foo);
+---
+(multistmt
+  (select
+    (select_spec
+      (ERROR
+        (paren_expr
+          (path_expr (identifier) (identifier))))
+      (set_quantifier)
+      (select_list
+        (select_item (path_expr (identifier))))))
+  (ERROR))
