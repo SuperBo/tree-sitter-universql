@@ -1165,10 +1165,10 @@ select 1 NOT IS NULL;
     (select_spec
       (select_list
         (select_item
-          (integer_literal)
-          (identifier)))))
-  (ERROR
-    (null)))
+          (compare_expr
+            (integer_literal)
+            (ERROR)
+            (null)))))))
 
 ===================
 Select NULL IS NULL
@@ -1371,7 +1371,7 @@ select [x between y], foo
             (expr_list
               (path_expr (identifier)))
             (ERROR
-              (identifier))))
+              (path_expr (identifier)))))
         (select_item
           (path_expr (identifier))))))) 
 

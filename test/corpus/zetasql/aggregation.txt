@@ -1,0 +1,792 @@
+===============
+Group by list 1
+===============
+
+select f1, f2 from T where f1=f2 group by f1;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))
+        (select_item (path_expr (identifier))))
+      (from_list
+        (table_ref
+          (path_expr (identifier))))
+      (binary_expr
+        (path_expr (identifier))
+        (path_expr (identifier)))
+      (group_by_list
+        (path_expr (identifier))))))
+
+===============
+Group by list 2
+===============
+
+select f1, f2 from T group by f1, f2, 1, 2
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))
+        (select_item (path_expr (identifier))))
+      (from_list
+        (table_ref
+          (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier))
+        (path_expr (identifier))
+        (integer_literal)
+        (integer_literal)))))
+
+=================
+Group by having 1
+=================
+
+select f1 from T group by f1 having f1 < 5;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier)))
+      (having_clause
+        (binary_expr
+          (path_expr (identifier))
+          (integer_literal))))))
+
+=================
+Group by having 2
+=================
+
+select f1, sum(f2) from T group by f1 having f1 = 3 and sum(f2) > 5;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (path_expr (identifier)))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier)))
+      (having_clause
+        (binary_expr
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal))
+          (binary_expr
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (path_expr (identifier))))) 
+            (integer_literal)))))))
+
+========
+Having 1
+========
+
+select max(true) as a from T having a;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (boolean_literal))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (having_clause
+        (path_expr (identifier))))))
+
+========
+Having 2
+========
+
+select sum(f1) as a from T having true;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (path_expr (identifier)))))
+          (identifier)))
+      (from_list (table_ref (path_expr (identifier))))
+      (having_clause (boolean_literal)))))
+
+=============
+Having having
+=============
+
+select sum(f1) as a from T having a > 5 having a > 5;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (path_expr (identifier)))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (ERROR
+        (having_clause
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal))))
+      (having_clause
+        (binary_expr
+          (path_expr (identifier))
+          (integer_literal))))))
+
+========
+Having 3
+========
+
+select * from (select a from T having a > 5);
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (star)))
+      (from_list
+        (table_ref
+          (subquery_table
+            (select
+              (select_spec
+                (select_list
+                  (select_item (path_expr (identifier))))
+                (from_list
+                  (table_ref (path_expr (identifier))))
+                (having_clause
+                  (binary_expr
+                    (path_expr (identifier))
+                    (integer_literal)))))))))))
+
+===========
+Array_agg 1
+===========
+
+select array_agg(x order by x) as a from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))
+          (identifier)))
+      (from_list
+        (table_ref
+          (path_expr (identifier)))))))
+
+===========
+Array_agg 2
+===========
+
+select array_agg(x order by x, y nulls last, z) as a from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))
+                  (order_by_item
+                    (path_expr (identifier))
+                    (nulls_order))
+                  (order_by_item (path_expr (identifier)))))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===========
+Array_agg 3
+===========
+
+select array_agg(distinct x order by x) as a from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===========
+Array_agg 4
+===========
+
+select array_agg(x order by x + 1, y + z) as a from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                   (order_by_item
+                     (binary_expr
+                       (path_expr (identifier))
+                       (integer_literal)))
+                   (order_by_item
+                     (binary_expr
+                       (path_expr (identifier))
+                       (path_expr (identifier))))))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===========
+Array_agg 5
+===========
+
+select x, array_agg(distinct y order by y) from T group by x
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier)))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier))))))
+
+===========
+Array_agg 6
+===========
+
+select x, array_agg(y order by x desc, z desc) from T group by x
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier)))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)) (order_direction))
+                  (order_by_item (path_expr (identifier)) (order_direction))))))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier))))))
+
+===========
+Array_agg 7
+===========
+
+select x, string_agg(y order by y collate "en_US" desc) from T group by x
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier)))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr (identifier))
+                    (collate_clause (string_literal))
+                    (order_direction))))))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier))))))
+
+===========
+Array_agg 8
+===========
+
+select count(* order by x) from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (star))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===========
+Array_agg 9
+===========
+
+select x, array_agg(y order@1 by y) from T group by x
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier)))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (hint (integer_literal))
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier))))))
+
+============
+Array_agg 10
+============
+
+select array_agg(Key order by 1)
+from TestTable
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (integer_literal))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Array_agg 11
+============
+
+select array_agg(x order by x limit 5) as a from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))
+              (limit_clause
+                (integer_literal))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Array_agg 12
+============
+
+select array_agg(x order by x limit 5 offset 2) as a from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))
+              (limit_clause (integer_literal))
+              (offset_clause (integer_literal))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Array_agg 13
+============
+
+SELECT array_agg(x limit 5) as a from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (limit_clause (integer_literal))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Array_agg 14
+============
+
+select x, array_agg(y order by x desc, z desc limit 10) from T group by x
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier)))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr (identifier))
+                    (order_direction))
+                  (order_by_item
+                    (path_expr (identifier))
+                    (order_direction))))
+              (limit_clause
+                (integer_literal))))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (group_by_list
+        (path_expr (identifier))))))
+
+============
+Array_agg 15
+============
+
+select array_agg(x offset 2) as a from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (ERROR)))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Anno_count 1
+============
+
+select anon_count(*, 0, 1 order by x) from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (star)
+                (integer_literal)
+                (integer_literal))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Anno_count 2
+============
+
+select anon_count(distinct) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==============
+Count distinct
+==============
+
+select count(distinct) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Sort_count 1
+============
+
+select sort_count(order by Key) as c from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===========
+Any_value 1
+===========
+
+select ANY_VALUE(true) as a from T having a;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (boolean_literal))))
+        (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (having_clause
+        (path_expr (identifier))))))
+
+===============
+Count with star
+===============
+
+select COUNT(*) as a from T having a;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list (star))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (having_clause
+        (path_expr (identifier))))))
+
+====================
+Anno_count with star
+====================
+
+select ANON_COUNT(*, 0, 1) as a from T having a
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (star)
+                (integer_literal)
+                (integer_literal))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (having_clause
+        (path_expr (identifier))))))
+
+=====================
+Sum with no arguments
+=====================
+
+select SUM() as a from T having a;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (having_clause
+        (path_expr (identifier))))))
+
+=====================
+Array_agg order limit
+=====================
+
+select array_agg(x order by z limit 1 offset 2) as a from T having a;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))
+              (limit_clause (integer_literal))
+              (offset_clause (integer_literal))))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (having_clause
+        (path_expr (identifier))))))
+
+=====================
+Array_agg with having
+=====================
+
+select array_agg(x order by z having min y) as a from T having a
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))
+              (ERROR)))
+          (identifier)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (having_clause
+        (path_expr (identifier))))))

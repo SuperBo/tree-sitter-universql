@@ -148,17 +148,28 @@ module.exports = grammar({
       'aS',
       'As'
     )),
-    _kw_and: _ => token(prec(1, KW.AND)),
-    _kw_or: _ => token(prec(1, KW.OR)),
-    _kw_order: _ => token(prec(1, KW.ORDER)),
-    _kw_limit: _ => token(prec(1, KW.LIMIT)),
+    _kw_partition: _ => token(reserve('partition')),
+    _kw_and: _ => token(KW.AND),
+    _kw_or: _ => token(KW.OR),
+    _kw_group: _ => token(KW.GROUP),
+    _kw_order: _ => token(KW.ORDER),
+    _kw_limit: _ => token(KW.LIMIT),
     _kw_analyze: _ => reserveMany('analyze', 'analyse'),
-    _kw_not: _ => token(prec(1, KW.NOT)),
-    _kw_like_ilike: _ => token(prec(1, reserveMany('like', 'ilike'))),
-    _kw_is: _ => token(prec(1, reserve('is'))),
+    _kw_not: _ => token(KW.NOT),
+    _kw_like_ilike: _ => token(reserveMany('like', 'ilike')),
+    _kw_is: _ => token(reserve('is')),
+    _kw_having: _ => token(reserve('having')),
+    _kw_over: _ => token(reserve('over')),
+    _kw_window_frame: _ => token(reserveMany('rows', 'range', 'groups')),
+    _kw_unbounded: _ => token(reserve('unbounded')),
+    _kw_current: _ => token(reserve('current')),
+    _kw_collate: _ => token(reserve('collate')),
+    _kw_between: _ => token(reserve('between')),
+    _kw_window: _ => token(reserve('window')),
+    _kw_ignore_respects: _ => token(reserveMany('ignore', 'respect')),
 
     /*==== Literals ====*/
-    null: _ => token(prec(1, reserve('null'))),
+    null: _ => token(reserve('null')),
     unknow: _ => reserve('unknow'),
     boolean_literal: _ => reserveMany('true', "false"),
     
@@ -283,7 +294,7 @@ module.exports = grammar({
       $.parameter_expr,
       $.system_variable_expr
     ),
-    collate_clause: $ => seq(reserve('collate'), $._string_lit_or_param),
+    collate_clause: $ => seq($._kw_collate, $._string_lit_or_param),
 
     /* Expression grammar
      * Take inpiration from Postgres Expression Grammar
@@ -323,7 +334,8 @@ module.exports = grammar({
     ),
     at_expr: $ => prec.left(PREC.AT, seq($._expr_primary, $._at_time_zone)),
     _at_time_zone: $ => seq(reserve('at'), reserve('time'), reserve('zone'), $._expr_primary),
-    pg_cast_expr:  $ => prec(PREC.CAST, seq($._expr_primary, '::', $.type)),// Postgres cast "::"
+    // Postgres cast "::"
+    pg_cast_expr:  $ => prec.left(PREC.CAST, seq($._expr_primary, '::', $._type_name)),
     unary_expr: $ => prec(PREC.UMINUS, seq(/~|\+|-/, $._expr_primary)),
     binary_expr: $ => choice(
       prec.left(PREC.ADD, seq($._expr_primary, /\+|-/, $._expr_primary)),
@@ -384,9 +396,18 @@ module.exports = grammar({
       $.func_expr_common_subexpr
     ),
     func_app: $ => seq(field('name', $.path_expr), '(', optional(choice(
-      seq(alias($.func_arg_list_variadic, $.func_arg_list), optOrderBy($)),
-      seq($.func_arg_variadic, optOrderBy($)),
-      seq($.set_quantifier, $.func_arg_list, optOrderBy($)),
+      seq(
+        alias($.func_arg_list_variadic, $.func_arg_list),
+        optional($.nulls_handling),
+        optOrderBy($), optional($._limit_offset)
+      ),
+      seq($.func_arg_variadic, optOrderBy($), optLimit($)),
+      seq(
+        $.set_quantifier,
+        optional($.func_arg_list),
+        optional($.nulls_handling),
+        optOrderBy($), optional($._limit_offset)),
+      seq($.order_by_clause),
     )), ')'),
     func_arg_variadic: $ => seq(reserve('variadic'), $._func_arg_expr),
     // The first argument may be a "*" instead of an expression
@@ -401,6 +422,8 @@ module.exports = grammar({
       seq($.path_expr, ':=', $.expr),
       seq($.path_expr, '=>', $.expr)
     ),
+    nulls_handling: $ => seq($._kw_ignore_respects, reserve('nulls')),
+    //having_modifier: $ => seq(reserve('having'), reserveMany('max', 'min'), $.expr),
 
     /* Special expressions that are considered to be functions.*/
     func_expr_common_subexpr: $ => choice(
@@ -559,14 +582,17 @@ module.exports = grammar({
     ),
 
     /* Common Clause */
-    _order_by_clause: $ => field('order', seq($._kw_order, KW.BY, $.order_by_list)),
-    order_by_list: $ => commaSep1($._order_by_item),
-    _order_by_item:	$ => seq($.expr, optional(reserveMany('asc', 'desc')), optional($.nulls_order)),
+    order_by_clause: $ => seq($._kw_order, optional($.hint), KW.BY, $.order_by_list),
+    order_by_list: $ => commaSep1($.order_by_item),
+    order_direction: _ => reserveMany('asc', 'desc'),
+    order_by_item:	$ => seq(
+      $.expr, optional($.collate_clause), optional($.order_direction), optional($.nulls_order)
+    ),
     nulls_order: _ => seq(reserve('nulls'), reserveMany('first', 'last')),
-    within_group_clause: $ => seq(reserve('within'), reserve('group'),'(', $._order_by_clause, ')'),
+    within_group_clause: $ => seq(reserve('within'), reserve('group'),'(', $.order_by_clause, ')'),
     filter_clause: $ => seq(reserve('filter'), '(', KW.WHERE, $.expr,')'),
-    _over_clause: $ => seq(reserve('over'), field('window', $.window_spec)),
-    _partition_clause: $ => seq(reserve('partition'), KW.BY, field('partition', $.expr_list)),
+    _over_clause: $ => seq($._kw_over, field('window', $.window_spec)),
+    _partition_clause: $ => seq($._kw_partition, KW.BY, field('partition', $.expr_list)),
     window_spec: $ => choice(
       $.identifier,
       seq('(',
@@ -576,17 +602,17 @@ module.exports = grammar({
       )
     ),
     window_frame_clause: $ => seq(
-      reserveMany('range', 'rows', 'groups'),
+      $._kw_window_frame,
       choice(
         $.window_frame_bound,
-        seq(reserve('between'), $.window_frame_bound, reserve('and'), $.window_frame_bound)
+        seq($._kw_between, $.window_frame_bound, reserve('and'), $.window_frame_bound)
       ),
       optional($.window_exclusion_clause)
     ),
     window_frame_bound: $ => choice(
-      seq(reserve('unbounded'), reserveMany('preceding', 'following')),
-      seq(reserve('current'), reserve('row')),
-      seq($.expr, reserveMany('preceding', 'following'))
+      seq($._kw_unbounded, reserveMany('preceding', 'following')),
+      seq($._kw_current, reserve('row')),
+      seq($._expr_primary, reserveMany('preceding', 'following'))
     ),
     window_exclusion_clause: _ => seq(reserve('exclude'), choice(
       reserve('group'),
@@ -625,12 +651,12 @@ module.exports = grammar({
     select: $ => choice(
       $._simple_select,
       $.select_set,
-      seq($._select_clause, $._order_by_clause),
+      seq($._select_clause, $.order_by_clause),
       seq($._select_clause, optOrderBy($), $.for_locking_clause, optional($._select_limit)),
       seq($._select_clause, optOrderBy($), $._select_limit, optional($.for_locking_clause)),
-      seq($._with_clause, $._select_clause, optional($._order_by_clause)),
-      seq($._with_clause, $._select_clause, optional($._order_by_clause), $.for_locking_clause, optional($._select_limit)),
-      seq($._with_clause, $._select_clause, optional($._order_by_clause), $._select_limit, optional($.for_locking_clause)),
+      seq($._with_clause, $._select_clause, optional($.order_by_clause)),
+      seq($._with_clause, $._select_clause, optional($.order_by_clause), $.for_locking_clause, optional($._select_limit)),
+      seq($._with_clause, $._select_clause, optional($.order_by_clause), $._select_limit, optional($.for_locking_clause)),
     ),
     // select_clause ~ <query expression body> in foundation grammar
     _select_clause: $ => choice(
@@ -658,7 +684,8 @@ module.exports = grammar({
       field('into', optional($.into_clause)),
       field('from', optional($._from_clause)),
       field('where', optional($._where_clause)),
-      field('group', optional(seq($._group_by_clause, optional($.having_clause)))),
+      field('group', optional($._group_by_clause)),
+      field('having', optional($.having_clause)),
       field('window', optional($.window_clause)),
       field('pivot', optional(choice($.pivot_clause, $.unpivot_clause))),
     ),
@@ -734,8 +761,9 @@ module.exports = grammar({
       seq(field('limit', $.limit_clause), optional(field('offset', $.offset_clause))),
       seq(field('offset', $.offset_clause), optional(field('limit', $.limit_clause)))
     ),
+    _limit_offset: $ => seq($.limit_clause, optional($.offset_clause)),
     limit_clause: $ => choice(
-      seq($._kw_limit, $.select_limit_val),
+      seq($._kw_limit, $._select_limit_val),
       seq(
         reserve('fetch'), reserveMany('first', 'next'),
         optional($.select_fetch_first_val),
@@ -747,7 +775,7 @@ module.exports = grammar({
       $.expr,
       seq($.select_fetch_first_val, reserveMany('row', 'rows'))
     )),
-    select_limit_val: $ => choice(reserve('all'), $.expr,),
+    _select_limit_val: $ => choice(reserve('all'), $.expr,),
     select_fetch_first_val: $ => choice(
       $._c_expr,
       seq(/\+|-/, $.integer_literal),
@@ -821,7 +849,7 @@ module.exports = grammar({
     /* Where clause in select */
     _where_clause: $ => seq(token(prec(1, reserve('where'))), $.expr),
     /* Group by and having clause */
-    _group_by_clause: $ => seq(KW.GROUP, KW.BY, optional($.set_quantifier), $.group_by_list),
+    _group_by_clause: $ => seq($._kw_group, KW.BY, optional($.set_quantifier), $.group_by_list),
     group_by_list: $ => commaSep1($._group_by_item),
     _group_by_item: $ => choice(
       $.expr,
@@ -831,10 +859,10 @@ module.exports = grammar({
       $.grouping_sets_clause
     ),
     grouping_sets_clause: $ => seq(reserve('grouping'), reserve('sets'), '(', $.group_by_list, ')'),
-    having_clause: $ => seq(reserve('having'), $.expr),
+    having_clause: $ => seq($._kw_having, $.expr),
 
     /* Window Definition */
-    window_clause: $ => seq(reserve('window'), commaSep1($.window_definition)),
+    window_clause: $ => seq($._kw_window, commaSep1($.window_definition)),
     window_definition: $ => seq($.identifier, $._kw_as, $.window_spec),
     
     pivot_value: $ => $._expr_opt_as_alias,
@@ -908,6 +936,14 @@ module.exports = grammar({
       seq('(', $.utility_option_list, ')', $._explainable_stmt)
     )),
 
+    /**************************************************************************
+     *   Hint
+     * We can have "@<int>", "@<int> @{hint_body}", or "@{hint_body}". The case
+     * where both @<int> and @{hint_body} are present is covered by
+     * hint_with_body_prefix.
+     **************************************************************************/
+    hint: $ => seq('@', $.integer_literal),
+
     // http://stackoverflow.com/questions/13014947/regex-to-match-a-c-style-multiline-comment/36328890#36328890
     comment: $ => token(choice(
       seq(/--|#/, /(\\(.|\r?\n)|[^\\\n])*/),
@@ -926,7 +962,7 @@ module.exports = grammar({
  */
 
 //generate b_expr
-function generate_exprs($, expr_rule, ...extend_rules) {
+/* function generate_exprs($, expr_rule, ...extend_rules) {
   base_exprs = [
     $._c_expr,
     prec(PREC.CAST, seq(expr_rule, '::', $.type)),
@@ -945,22 +981,26 @@ function generate_exprs($, expr_rule, ...extend_rules) {
 
   exprs = base_exprs.concat(extend_rules);
   return choice(...exprs);
-}
+} */
 
 function optNot() {
   return optional(KW.NOT);
 }
 
 function optOrderBy($) {
-  return optional($._order_by_clause)
+  return optional($.order_by_clause);
+}
+
+function optLimit($) {
+  return optional($.limit_clause);
 }
 
 function commaSep (rule) {
-  return optional(commaSep1(rule))
+  return optional(commaSep1(rule));
 }
 
 function commaSep1 (rule) {
-  return seq(rule, repeat(seq(',', rule)))
+  return seq(rule, repeat(seq(',', rule)));
 }
 
 function reserveOpt(keyword) {
@@ -996,4 +1036,3 @@ function caseInsensitive(keyword) {
     .map(letter => (letter !== ' ' && letter !== '_') ? `[${letter}${letter.toUpperCase()}]` : letter)
     .join('')
 }
-

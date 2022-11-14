@@ -1,0 +1,1703 @@
+===============
+Window function
+===============
+
+select f() over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Missing over
+============
+
+select f() () from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))))))
+      (ERROR)
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=====================
+Missing function call
+=====================
+
+select over () from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))))))
+      (from_list
+        (table_ref
+          (path_expr (identifier)))))))
+
+=================
+Window function 2
+=================
+
+select f(a, b+1, sum(c)) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+                (func_arg_list
+                  (path_expr (identifier))
+                  (binary_expr
+                    (path_expr (identifier))
+                    (integer_literal))
+                  (func_expr
+                    (func_app
+                      (path_expr (identifier))
+                      (func_arg_list
+                        (path_expr (identifier)))))))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Window function 3
+=================
+
+select f(distinct a, b) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list
+                (path_expr (identifier))
+                (path_expr (identifier))))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===========================
+Window function partition 1
+===========================
+
+select f() over (partition by a, b+1, 1, sum(c)) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (expr_list
+                (path_expr (identifier))
+                (binary_expr
+                  (path_expr (identifier))
+                  (integer_literal))
+                (integer_literal)
+                (func_expr
+                  (func_app
+                    (path_expr (identifier))
+                    (func_arg_list
+                      (path_expr (identifier))))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=======================
+Window function order 1
+=======================
+
+select f() over (order by a, b+1, 1, sum(c)) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr (identifier)))
+                  (order_by_item
+                    (binary_expr
+                      (path_expr (identifier))
+                      (integer_literal)))
+                  (order_by_item
+                    (integer_literal))
+                  (order_by_item
+                    (func_expr
+                      (func_app
+                        (path_expr (identifier))
+                        (func_arg_list
+                          (path_expr (identifier))))))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+========================
+Window function having 2
+========================
+
+select f() over (partition by a order by a)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (expr_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+========================================
+Wrong order of partition by and order by
+========================================
+
+select f() over (order by a partition by a) from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr
+                      (identifier)))))
+             (ERROR))))) 
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==================
+One-sided window 1
+==================
+
+select f() over (rows unbounded preceding)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)))))))))
+
+==================
+One-sided window 2
+==================
+
+select f() over (range unbounded preceding)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)))))))))
+
+==================
+One-sided window 3
+==================
+
+select f() over (rows 5+5 preceding)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr
+                    (integer_literal)
+                    (integer_literal)))))))))))
+
+==================
+One-sided window 4
+==================
+
+select f() over (range 5+7 preceding)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr
+                    (integer_literal)
+                    (integer_literal)))))))))))
+
+====================
+Current row window 1
+====================
+
+select b() over (rows current row)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)))))))))
+
+====================
+Current row window 2
+====================
+
+select b() over (range current row)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)))))))))
+
+==================
+Two-sided window 1
+==================
+
+select f() over (rows between 5+5 preceding and unbounded preceding)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal)))
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==================
+Two-sided window 2
+==================
+
+select f() over (range between 5+5 preceding and unbounded preceding)
+from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal)))
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=======================================
+Offset preceding as the ending boundary
+=======================================
+
+select f() over (rows between 5+5 preceding and 5+5 preceding)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal)))
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==================================
+Current row as the ending boundary
+==================================
+
+select f() over (range between 5+5 preceding and current row)
+
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal)))
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+
+===============
+Wrong key words
+===============
+
+select f() over (range between 5+5 preceding and current rows)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr
+                    (integer_literal)
+                    (integer_literal)))
+                (window_frame_bound)) 
+                (ERROR)))))
+      (from_list
+        (table_ref
+          (path_expr (identifier)))))))
+
+=======================================
+Offset following as the ending boundary
+=======================================
+
+select f() over (rows between 5+5 preceding and 5+5 following)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal)))
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==========================================
+Unbounded following as the ending boundary
+==========================================
+
+select f() over (range between 5+5 preceding and unbounded following)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound
+                  (binary_expr (integer_literal) (integer_literal)))
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+====================
+Order by current row
+====================
+
+select f() over (partition by a order by b rows current row) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (expr_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))
+              (window_frame_clause
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Window function 4
+=================
+
+select f() over (partition by a rows current row) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (expr_list
+                (path_expr (identifier)))
+              (window_frame_clause
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Window function 5
+=================
+
+select f() over (order by a  rows current row) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app (path_expr (identifier)))
+            (window_spec
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))
+              (window_frame_clause
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Window function 6
+=================
+
+select f() over (partition by a order by a) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (expr_list
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+================
+Window clauses 1
+================
+
+select * from T
+window w1 as (),
+       w2 as (partition by a order by b rows current row),
+       w3 as (w1),
+       w4 as (w1 partition by a order by b rows current row)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (star)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (window_spec))
+        (window_definition
+          (identifier)
+          (window_spec
+            (expr_list
+              (path_expr (identifier)))
+            (order_by_clause
+              (order_by_list
+                (order_by_item (path_expr (identifier)))))
+            (window_frame_clause
+              (window_frame_bound))))
+        (window_definition
+          (identifier)
+          (window_spec
+            (identifier)))
+        (window_definition
+          (identifier)
+          (window_spec
+            (identifier)
+            (expr_list
+              (path_expr (identifier)))
+            (order_by_clause
+              (order_by_list
+                (order_by_item (path_expr (identifier)))))
+            (window_frame_clause
+              (window_frame_bound))))))))
+
+==============
+Forgot a comma
+==============
+
+select * from T
+window w1 as ()
+       w2 as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (star)))
+      (from_list
+        (table_ref
+          (path_expr (identifier))))
+      (window_clause
+        (ERROR
+          (window_definition
+            (identifier)
+            (window_spec)))
+        (window_definition
+          (identifier)
+          (window_spec))))))
+
+==========================================
+Window clause cannot appear after order by
+==========================================
+
+select * from T
+order by a
+window w1 as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (star)))
+      (from_list
+        (table_ref
+          (path_expr
+            (identifier)))))
+    (order_by_clause
+      (order_by_list
+        (order_by_item
+          (func_expr
+            (func_app
+              (path_expr
+                (identifier))
+              (ERROR))))))))
+
+=========================================
+Window clause cannot appear before having
+=========================================
+
+select * from T
+window w1 as ()
+having a > 1
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (star)))
+      (from_list
+        (table_ref
+          (path_expr
+            (identifier))))
+      (ERROR
+        (window_clause
+          (window_definition
+            (identifier)
+            (window_spec))))
+      (having_clause
+        (binary_expr
+          (path_expr
+            (identifier))
+          (integer_literal))))))
+
+=============================================
+Reference a window by name in the over clause
+=============================================
+
+select f() over (w) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+======================================
+Cannot have more than one window names
+======================================
+
+select f() over (w1 w2) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (identifier)
+              (ERROR)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Window function 7
+=================
+
+select f() over (w partition by a, b order by a, b rows current row) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (identifier)
+              (expr_list
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item (path_expr (identifier)))
+                  (order_by_item (path_expr (identifier)))))
+              (window_frame_clause
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==========================
+Parentheses can be omitted
+==========================
+
+select f() over w from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=======================================
+Window name cannot be a path expression
+=======================================
+
+select f() over a.b.c
+from T
+window a.b.c as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (dot_identifier
+            (dot_identifier
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))
+                (window_spec
+                  (identifier)))
+              (identifier))
+            (identifier))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (ERROR)
+          (window_spec))))))
+
+======================================
+Analytic function and dot identifier 1
+======================================
+
+select f() over a.b
+from T
+window a as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (dot_identifier
+            (func_expr
+              (func_app
+                (path_expr (identifier)))
+              (window_spec
+                (identifier)))
+            (identifier))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (window_spec)))))) 
+
+======================================
+Analytic function and dot identifier 2
+======================================
+
+select (f() over a).b
+from T
+window a as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (dot_identifier
+            (paren_expr
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))
+                (window_spec
+                  (identifier))))
+            (identifier))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (window_spec)))))) 
+
+======================================
+Analytic function and dot identifier 3
+======================================
+
+select f() over (a).b
+from T
+window a as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (dot_identifier
+            (func_expr
+              (func_app
+                (path_expr (identifier)))
+              (window_spec
+                (identifier)))
+            (identifier))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (window_spec)))))) 
+
+===========================
+Analytic function and add 1
+===========================
+
+select f() over a+b
+from T
+window a as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (func_expr
+              (func_app
+                (path_expr (identifier)))
+              (window_spec
+                (identifier)))
+            (path_expr (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (window_spec)))))) 
+
+===========================
+Analytic function and add 2
+===========================
+
+select  f() over (a)+b 
+from T
+window a as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (func_expr
+              (func_app
+                (path_expr (identifier)))
+              (window_spec
+                (identifier)))
+            (path_expr (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (window_spec)))))) 
+
+===========================
+Analytic function and add 3
+===========================
+
+select (f() over a)+b
+from T
+window a as ()
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (paren_expr
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))
+                (window_spec
+                  (identifier))))
+            (path_expr (identifier)))))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (window_clause
+        (window_definition
+          (identifier)
+          (window_spec)))))) 
+
+==========================
+Parentheses are required 1
+==========================
+
+select f() over w partition by a,b from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (identifier)))
+          (identifier))
+        (ERROR)
+        (select_item
+          (path_expr (identifier))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+==========================
+Parentheses are required 2
+==========================
+
+select f() over w current row from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (identifier)))
+          (identifier)))
+      (ERROR)
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=========================================
+Analytic functions can appear many places
+=========================================
+
+select f() over (), (f() over ())+1,
+       f(f() over ()) over (partition by f() over () order by f() over ()
+                            rows f() over () preceding)
+from T
+where f() over () and (f() over ())+1
+group by f() over (), (f() over ())+1
+having f() over () and (f() over ())+1
+order by f() over (), (f() over ())+1
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec)))
+        (select_item
+          (binary_expr
+            (paren_expr
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))
+                (window_spec)))
+            (integer_literal)))
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (func_expr
+                  (func_app
+                    (path_expr (identifier)))
+                  (window_spec))))
+            (window_spec
+              (expr_list
+                (func_expr
+                  (func_app
+                    (path_expr (identifier)))
+                  (window_spec)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (func_expr
+                      (func_app
+                        (path_expr (identifier)))
+                      (window_spec)))))
+              (window_frame_clause
+                (window_frame_bound
+                  (func_expr
+                    (func_app
+                      (path_expr (identifier)))
+                    (window_spec))))))))
+      (from_list
+        (table_ref
+          (path_expr (identifier))))
+      (binary_expr
+        (func_expr
+          (func_app
+            (path_expr (identifier)))
+          (window_spec))
+        (binary_expr
+          (paren_expr
+            (func_expr
+              (func_app
+                (path_expr (identifier)))
+              (window_spec)))
+          (integer_literal)))
+      (group_by_list
+        (func_expr
+          (func_app
+            (path_expr (identifier)))
+          (window_spec))
+        (binary_expr
+          (paren_expr
+            (func_expr
+              (func_app
+                (path_expr (identifier)))
+              (window_spec)))
+          (integer_literal)))
+      (having_clause
+        (binary_expr
+          (func_expr
+            (func_app
+              (path_expr
+                (identifier)))
+            (window_spec))
+          (binary_expr
+            (paren_expr
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))
+                (window_spec)))
+            (integer_literal)))))
+    (order_by_clause
+      (order_by_list
+        (order_by_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec)))
+        (order_by_item
+          (binary_expr
+            (paren_expr
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))
+                (window_spec)))
+            (integer_literal)))))))
+
+==============================================
+Analytic functions in order by after union all
+==============================================
+
+select * from T
+union all
+select * from T
+order by f() over (), (f() over ())+1
+---
+(multistmt
+  (select
+    (select_set
+      (select_spec
+        (select_list
+          (select_item
+            (star)))
+        (from_list
+          (table_ref
+            (path_expr (identifier)))))
+      (set_operator)
+      (set_quantifier)
+      (select_spec
+        (select_list
+          (select_item
+            (star)))
+        (from_list
+          (table_ref
+            (path_expr (identifier))))))
+    (order_by_clause
+      (order_by_list
+        (order_by_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec)))
+        (order_by_item
+          (binary_expr
+            (paren_expr
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))
+                (window_spec)))
+            (integer_literal)))))))
+
+
+=================================
+Analytics functions with groups 1
+=================================
+
+select f() over (groups current row)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================================
+Analytics functions with groups 2
+=================================
+
+select f() over (groups between current row and current row)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)
+                (window_frame_bound)))))))))
+
+===============================
+Analytics function ignore nulls
+===============================
+
+select lead(a) ignore nulls over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr
+                (identifier))
+              (func_arg_list
+                (path_expr
+                  (identifier)))))
+          (identifier)))
+      (ERROR)
+      (from_list
+        (table_ref
+          (path_expr
+            (identifier)))))))
+
+========================
+Window frame exclusion 1
+========================
+
+select
+  f() over (rows between unbounded preceding and unbounded following
+            exclude current row)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)
+                (window_frame_bound)
+                (window_exclusion_clause))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+========================
+Window frame exclusion 2
+========================
+
+select
+  f() over (rows between unbounded preceding and unbounded following
+            exclude no others)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)
+                (window_frame_bound)
+                (window_exclusion_clause))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+========================
+Window frame exclusion 3
+========================
+
+select
+  f() over (rows between unbounded preceding and unbounded following
+            exclude ties)
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (window_frame_clause
+                (window_frame_bound)
+                (window_frame_bound)
+                (window_exclusion_clause))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================================
+Analytic functions with collate 1
+=================================
+
+select f() over (partition by k collate latin1_german2_ci) from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (expr_list
+                (path_expr (identifier)))
+              (ERROR)))))
+      (from_list
+        (table_ref
+          (path_expr
+            (identifier)))))))
+
+=================================
+Analytic functions with collate 2
+=================================
+
+select f() over (order by k collate "latin1_german2_ci") from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier)))
+            (window_spec
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr (identifier))
+                    (collate_clause
+                      (string_literal)))))))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+================================
+Analytic function ignore nulls 1
+================================
+
+select f(a ignore nulls) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (nulls_handling))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================================
+Analytic function respect nulls 1
+=================================
+
+select f(a respect nulls) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (nulls_handling))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+================================
+Analytic function ignore nulls 2
+================================
+
+select f(a, b ignore nulls) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (nulls_handling))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================================
+Analytic function respect nulls 2
+=================================
+
+select f(a, b respect nulls) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (nulls_handling))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+================================
+Analytic function ignore nulls 3
+================================
+
+select
+  f(distinct a, b ignore NULLS order by c limit 1) over ()
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (nulls_handling)
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr (identifier)))))
+              (limit_clause
+                (integer_literal)))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================================
+Analytic function respect nulls 3
+=================================
+
+select
+  f(distinct a, b respect NULLS order by c limit 1) over ()
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (set_quantifier)
+              (func_arg_list
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (nulls_handling)
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr (identifier)))))
+              (limit_clause
+                (integer_literal)))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+====================
+Ignore without nulls
+====================
+
+select
+  f(a ignore) over ()
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (ERROR))
+            (window_spec)))) 
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+============
+Respect null
+============
+
+select
+  f(a respect null) over ()
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (ERROR))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+===================
+Double ignore nulls
+===================
+
+select
+  f(a ignore nulls ignore nulls) over ()
+from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (nulls_handling)
+              (ERROR))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Star ignore nulls
+=================
+
+select
+  count(* ignore nulls) over ()
+from T;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (star))
+              (nulls_handling))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=================
+Bare ignore nulls
+=================
+
+select
+  f(respect nulls) over ()
+from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier)))
+              (ERROR))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
+
+=========================
+Limit before ignore nulls
+=========================
+
+select f(a, b limit 1 ignore nulls) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (limit_clause
+                (ERROR)
+                (path_expr (identifier))))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier))))))) 
+
+==========================
+Order before respect nulls
+==========================
+
+select f(a, b order by c respect nulls) over () from T
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (order_by_clause
+                (order_by_list
+                  (order_by_item
+                    (path_expr (identifier)))))
+              (ERROR))
+            (window_spec))))
+      (from_list
+        (table_ref (path_expr (identifier)))))))
