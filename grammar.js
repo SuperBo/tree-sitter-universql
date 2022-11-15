@@ -148,6 +148,7 @@ module.exports = grammar({
       'aS',
       'As'
     )),
+    _kw_array: _ => token(reserve('array')),
     _kw_partition: _ => token(reserve('partition')),
     _kw_and: _ => token(KW.AND),
     _kw_or: _ => token(KW.OR),
@@ -272,7 +273,7 @@ module.exports = grammar({
     /* Type */
     // Unlike other type names, 'INTERVAL' is a reserved keyword.
     _type_name: $ => choice($.path_expr, KW.INTERVAL),
-    array_type: $ => seq(token(prec(1, reserve('array'))), '<', $.type, '>'),
+    array_type: $ => seq($._kw_array, '<', $.type, '>'),
     struct_field: $ => seq(optional($.identifier), $.type),
     //struct_field_list: $ => commaSep1($.struct_field),
     struct_type: $ => seq(token(prec(1, reserve('struct'))), '<', optional(commaSep1($.struct_field)), '>'), 
@@ -331,12 +332,14 @@ module.exports = grammar({
       $.pg_cast_expr,
       $.unary_expr,
       $.binary_expr,
+      $.array_elem,
     ),
     at_expr: $ => prec.left(PREC.AT, seq($._expr_primary, $._at_time_zone)),
     _at_time_zone: $ => seq(reserve('at'), reserve('time'), reserve('zone'), $._expr_primary),
     // Postgres cast "::"
     pg_cast_expr:  $ => prec.left(PREC.CAST, seq($._expr_primary, '::', $._type_name)),
     unary_expr: $ => prec(PREC.UMINUS, seq(/~|\+|-/, $._expr_primary)),
+    array_elem: $ => prec(PREC.PRIMARY, seq($._expr_primary, '[', $._expr_primary, ']')),
     binary_expr: $ => choice(
       prec.left(PREC.ADD, seq($._expr_primary, /\+|-/, $._expr_primary)),
       prec.left(PREC.MUL, seq($._expr_primary, /\*|\/|%|\|\|/, $._expr_primary)),
@@ -345,7 +348,6 @@ module.exports = grammar({
       prec.left(PREC.BITWISE_OR, seq($._expr_primary, /\|/, $._expr_primary)),
       prec.left(PREC.BITWISE_XOR, seq($._expr_primary, /\^/, $._expr_primary)),
       prec.left(PREC.COMPARE, seq($._expr_primary, /=|<=?|>=?|!=|<>/, $._expr_primary)),
-      prec.left(PREC.PRIMARY, seq($._expr_primary, '[', $._expr_primary, ']')),
     ),
 
     /*
@@ -364,7 +366,9 @@ module.exports = grammar({
       $.paren_expr,
       $.case_expr,
       $.func_expr,
-      $.array_expr
+      $.array_expr,
+      prec(PREC.UMINUS, $.subquery_expr),
+      prec(PREC.UMINUS, $.select_in_parens)
     ),
     paren_expr: $ => seq('(', $.expr ,')'),
 
@@ -387,8 +391,14 @@ module.exports = grammar({
       $.integer_literal,
       seq(/\+|-/, $.interval_literal)
     ),
-    dot_identifier: $ => prec(PREC.PRIMARY, seq($._expr_primary, '.', $.identifier)),
+    dot_identifier: $ => prec(PREC.PRIMARY, seq($._expr_primary, '.', $.general_identifier)),
     dot_field: $ => prec(PREC.PRIMARY, seq($.expr, '.', '(', $.path_expr, ')')),
+
+    /* Subquery */
+    subquery_expr: $ => choice(
+      seq($._kw_array, $.select_in_parens),
+      seq(reserve('exists'), optional($.hint), $.select_in_parens),
+    ),
 
     /* Function Expression */
     func_expr: $ => choice(
@@ -622,10 +632,7 @@ module.exports = grammar({
     )),
     expr_list: $ => seq($.expr, repeat(seq(',', $.expr))),
 
-    _array_construct_prefix: $ => choice(
-      reserve('array'),
-      $.array_type
-    ),
+    _array_construct_prefix: $ => choice($._kw_array, $.array_type),
     array_expr: $ => seq(optional($._array_construct_prefix), '[', optional($.expr_list), ']'),
     /*
     _format: $ => seq(reserve('format'), $.expression, optional($._at_time_zone)),

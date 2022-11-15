@@ -1391,7 +1391,7 @@ select key, kv.key, kv, (kv).key from KeyValue kv;
         (select_item
           (dot_identifier
             (paren_expr (path_expr (identifier)))
-            (identifier))))
+            (general_identifier))))
       (from_list
         (table_ref
           (path_expr (identifier))

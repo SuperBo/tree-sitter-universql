@@ -823,8 +823,8 @@ window a.b.c as ()
                   (path_expr (identifier)))
                 (window_spec
                   (identifier)))
-              (identifier))
-            (identifier))))
+              (general_identifier))
+            (general_identifier))))
       (from_list
         (table_ref (path_expr (identifier))))
       (window_clause
@@ -852,7 +852,7 @@ window a as ()
                 (path_expr (identifier)))
               (window_spec
                 (identifier)))
-            (identifier))))
+            (general_identifier))))
       (from_list
         (table_ref (path_expr (identifier))))
       (window_clause
@@ -880,7 +880,7 @@ window a as ()
                   (path_expr (identifier)))
                 (window_spec
                   (identifier))))
-            (identifier))))
+            (general_identifier))))
       (from_list
         (table_ref (path_expr (identifier))))
       (window_clause
@@ -907,7 +907,7 @@ window a as ()
                 (path_expr (identifier)))
               (window_spec
                 (identifier)))
-            (identifier))))
+            (general_identifier))))
       (from_list
         (table_ref (path_expr (identifier))))
       (window_clause

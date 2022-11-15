@@ -1,0 +1,726 @@
+==============
+Select array 1
+==============
+
+select 1, [1], ARRAY[1], ARRAY<int32>[1]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (integer_literal))
+        (select_item
+          (array_expr
+            (expr_list
+              (integer_literal))))
+        (select_item
+          (array_expr
+            (expr_list
+              (integer_literal))))
+        (select_item
+          (array_expr
+            (array_type
+              (type (path_expr (identifier))))
+            (expr_list
+              (integer_literal))))))))
+
+==============
+Select array 2
+==============
+
+select [x, f(x), x + f(x), (select x)]
+---
+
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_expr
+            (expr_list
+              (path_expr (identifier))
+              (func_expr
+                (func_app
+                  (path_expr (identifier))
+                  (func_arg_list
+                    (path_expr (identifier)))))
+              (binary_expr
+                (path_expr (identifier))
+                (func_expr
+                  (func_app
+                    (path_expr (identifier))
+                    (func_arg_list
+                      (path_expr (identifier))))))
+              (select_in_parens
+                (select
+                  (select_spec
+                    (select_list
+                      (select_item
+                        (path_expr (identifier))))))))))))))
+
+==============
+Select array 3
+==============
+
+select [1, 2, 3], ARRAY[1, 2, 3], ARRAY<int32>[1, 2, 3]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_expr
+            (expr_list
+              (integer_literal)
+              (integer_literal)
+              (integer_literal))))
+        (select_item
+          (array_expr
+            (expr_list
+              (integer_literal)
+              (integer_literal)
+              (integer_literal))))
+        (select_item
+          (array_expr
+            (array_type
+              (type (path_expr (identifier))))
+            (expr_list
+              (integer_literal)
+              (integer_literal)
+              (integer_literal))))))))
+
+==============
+Select array 4
+==============
+
+select "a", 3, ["a", 3], ARRAY<string> [3, "a"]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (string_literal))
+        (select_item
+          (integer_literal))
+        (select_item
+          (array_expr
+            (expr_list
+              (string_literal)
+              (integer_literal))))
+        (select_item
+          (array_expr
+            (array_type
+              (type (path_expr (identifier))))
+            (expr_list
+              (integer_literal)
+              (string_literal))))))))
+
+
+
+==============
+Select array 5
+==============
+
+select [], ARRAY[], ARRAY<int32>[]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_expr))
+        (select_item
+          (array_expr))
+        (select_item
+          (array_expr
+            (array_type
+              (type
+                (path_expr (identifier))))))))))
+
+======================
+Select array element 1
+======================
+
+select [][2]
+
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (array_expr)
+            (integer_literal)))))))
+
+==============
+Select array 6
+==============
+
+select ARRAY(1, 2, 3)
+---
+(multistmt
+  (select
+    (select_spec
+      (ERROR)
+      (select_list
+        (select_item
+          (integer_literal))
+        (select_item
+          (integer_literal))
+        (select_item
+          (integer_literal)))))
+  (ERROR))
+
+==============
+Select array 7
+==============
+
+select ARRAY(int32)(1, 2, 3)
+---
+(ERROR
+  (ERROR))
+
+=============================
+Identified as a function call
+=============================
+
+select ArrayOfInt32(1, 2, 3)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (integer_literal)
+                (integer_literal)
+                (integer_literal)))))))))
+
+==============
+Nested array 1
+==============
+
+select ARRAY[ARRAY(select 1), ARRAY[1, f(2), 1.0], 1 + ARRAY[1]]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_expr
+            (expr_list
+              (subquery_expr
+                (select_in_parens
+                  (select
+                    (select_spec
+                      (select_list
+                        (select_item (integer_literal)))))))
+              (array_expr
+                (expr_list
+                  (integer_literal)
+                  (func_expr
+                    (func_app
+                      (path_expr (identifier))
+                      (func_arg_list
+                        (integer_literal))))
+                  (float_literal)))
+              (binary_expr
+                (integer_literal)
+                (array_expr
+                  (expr_list
+                    (integer_literal)))))))))))
+
+==============
+Nested array 2
+==============
+
+select ARRAY[1, 2, 3][0], [1][0]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (array_expr
+              (expr_list
+                (integer_literal)
+                (integer_literal)
+                (integer_literal)))
+            (integer_literal)))
+        (select_item
+          (array_elem
+            (array_expr
+              (expr_list
+                (integer_literal)))
+            (integer_literal)))))))
+
+============================
+Generalized dot identifier 1
+============================
+
+select [1].1
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (dot_identifier
+            (array_expr
+              (expr_list
+                (integer_literal)))
+            (general_identifier)))))))
+
+============================
+Generalized dot identifier 2
+============================
+
+select [1].a[1]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (dot_identifier
+              (array_expr
+                (expr_list
+                  (integer_literal)))
+              (general_identifier))
+            (integer_literal)))))))
+
+
+===============
+Offset in array
+===============
+
+select a[offset(b+c)]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (binary_expr
+                    (path_expr (identifier))
+                    (path_expr (identifier))))))))))))
+
+================
+Ordinal in array
+================
+
+select a[ordinal(b+c)]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (binary_expr
+                    (path_expr (identifier))
+                    (path_expr (identifier))))))))))))
+
+====================
+Safe_offset in array
+====================
+
+select a[safe_offset(b)], a[safe_ordinal(b+1)]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (path_expr (identifier)))))))
+        (select_item
+          (array_elem
+            (path_expr
+              (identifier))
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (binary_expr
+                    (path_expr (identifier))
+                    (integer_literal)))))))))))
+
+===========================
+Offset and ordinal in array
+===========================
+
+select a[offset], a[ordinal], a[`offset`], a[ordinal(ordinal)]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (path_expr (identifier))))
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (path_expr (identifier))))
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (path_expr (identifier))))
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (path_expr (identifier)))))))))))
+
+==============
+Offset in from
+==============
+
+select 1
+from a.b[offset(2)]
+---
+(multistmt
+  (select
+    (select_spec
+      (ERROR
+        (select_list
+          (select_item
+            (integer_literal)))
+        (from_list
+          (table_ref
+            (path_expr (identifier) (identifier)))))
+      (select_list
+        (select_item
+          (array_expr
+            (expr_list
+              (func_expr
+                (func_app
+                  (path_expr (identifier))
+                  (func_arg_list
+                    (integer_literal)))))))))))
+
+=====================
+Expresison in array 1
+=====================
+
+select f(a), a.b[1 + 2 * (3 + 4)], 3
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (func_expr
+            (func_app
+              (path_expr (identifier))
+              (func_arg_list
+                (path_expr (identifier))))))
+        (select_item
+          (array_elem
+            (path_expr (identifier) (identifier))
+            (binary_expr
+              (integer_literal)
+              (binary_expr
+                (integer_literal)
+                (paren_expr
+                  (binary_expr
+                    (integer_literal)
+                    (integer_literal)))))))
+        (select_item
+          (integer_literal))))))
+
+=====================
+Expression in array 2
+=====================
+
+select a[-1], a['x'], a[NULL]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (unary_expr
+              (integer_literal))))
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (string_literal)))
+        (select_item
+          (array_elem
+            (path_expr
+              (identifier))
+            (null)))))))
+
+========================
+Dot identifier and array
+========================
+
+select f(a).b[f(c)]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (dot_identifier
+              (func_expr
+                (func_app
+                  (path_expr (identifier))
+                  (func_arg_list
+                    (path_expr (identifier)))))
+              (general_identifier))
+            (func_expr
+              (func_app
+                (path_expr (identifier))
+                (func_arg_list
+                  (path_expr (identifier)))))))))))
+
+==============
+Select array 8
+==============
+
+select a + b2 * b[2] + c1 * c2
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (binary_expr
+              (path_expr (identifier))
+              (binary_expr
+                (path_expr (identifier))
+                (array_elem
+                  (path_expr (identifier))
+                  (integer_literal))))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))))))))
+
+==============
+Select array 9
+==============
+
+select arr[1] + arr[2]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (array_elem
+              (path_expr (identifier))
+              (integer_literal))
+            (array_elem
+              (path_expr (identifier))
+              (integer_literal))))))))
+
+===============
+Select array 10
+===============
+
+select a[b.c[d]];
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (array_elem
+              (path_expr (identifier) (identifier))
+              (path_expr (identifier)))))))))
+
+===============
+Select array 11
+===============
+
+select a[1] + a[1 + f(2)]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (array_elem
+              (path_expr (identifier))
+              (integer_literal))
+            (array_elem
+              (path_expr (identifier))
+              (binary_expr
+                (integer_literal)
+                (func_expr
+                  (func_app
+                    (path_expr (identifier))
+                    (func_arg_list
+                      (integer_literal))))))))))))
+
+===============
+Select array 12
+===============
+
+select (a+b)[c]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (paren_expr
+              (binary_expr
+                (path_expr (identifier))
+                (path_expr (identifier))))
+            (path_expr (identifier))))))))
+
+===============
+Select array 13
+===============
+
+select (((a)[b]).c[d]).e[(f)]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (dot_identifier
+              (paren_expr
+                (array_elem
+                  (dot_identifier
+                    (paren_expr
+                      (array_elem
+                        (paren_expr
+                          (path_expr (identifier)))
+                        (path_expr (identifier))))
+                    (general_identifier))
+                  (path_expr (identifier))))
+              (general_identifier))
+            (paren_expr
+              (path_expr (identifier)))))))))
+
+==============
+Nested array 2
+==============
+
+select a[b][c]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (array_elem
+              (path_expr
+                (identifier))
+              (path_expr
+                (identifier)))
+            (path_expr
+              (identifier))))))))
+
+==============
+Nested array 3
+==============
+
+select a[b[c[d]]]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (path_expr (identifier))
+            (array_elem
+              (path_expr (identifier))
+              (array_elem
+                (path_expr (identifier))
+                (path_expr (identifier)))))))))) 
+
+===============
+Select array 14
+===============
+
+select function()[5]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (func_expr
+              (func_app
+                (path_expr (identifier))))
+            (integer_literal)))))))
+
+===============
+Select array 15
+===============
+
+select 5[6];
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (integer_literal)
+            (integer_literal)))))))
+
+===============
+Select array 16
+===============
+
+select NULL[NULL[NULL]]
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (array_elem
+            (null)
+            (array_elem
+              (null)
+              (null))))))))
