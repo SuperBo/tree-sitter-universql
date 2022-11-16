@@ -1,0 +1,599 @@
+================
+Select between 1
+================
+
+select col BETWEEN value1 AND value2
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+================
+Select between 2
+================
+
+select x BETWEEN a AND b AND c AND D
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (binary_expr
+              (compare_expr
+                (path_expr (identifier))
+                (path_expr (identifier))
+                (path_expr (identifier)))
+              (path_expr (identifier)))
+            (path_expr (identifier))))))))
+
+================
+Select between 3
+================
+
+select x BETWEEN (a AND b) AND (c AND D)
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (paren_expr
+              (binary_expr
+                (path_expr (identifier))
+                (path_expr (identifier))))
+            (paren_expr
+              (binary_expr
+                (path_expr (identifier))
+                (path_expr (identifier))))))))))
+
+================
+Select between 4
+================
+
+select x BETWEEN a BETWEEN b AND c AND d
+---
+(multistmt
+  (select
+  (select_spec
+    (select_list
+      (select_item
+        (binary_expr
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (ERROR)
+            (path_expr (identifier)))
+          (path_expr (identifier))))))))
+
+================
+Select between 5
+================
+
+select x BETWEEN a AND b BETWEEN c AND d
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr
+              (identifier))
+            (path_expr
+              (identifier))
+            (path_expr
+              (identifier)))
+          (identifier)))))
+  (ERROR))
+
+================
+Select between 6
+================
+
+select x BETWEEN (a BETWEEN b AND c) AND d
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (paren_expr
+              (compare_expr
+                (path_expr (identifier))
+                (path_expr (identifier))
+                (path_expr (identifier))))
+            (path_expr (identifier))))))))
+
+================
+Select between 7
+================
+
+select col BETWEEN NOT a AND b
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (ERROR)
+            (path_expr (identifier))))))))
+
+
+================
+Select between 8
+================
+
+select col BETWEEN a AND b IS NULL
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr
+              (identifier))
+            (path_expr
+              (identifier))
+            (path_expr
+              (identifier)))
+          (identifier)))))
+  (ERROR))
+
+================
+Select between 9
+================
+
+select (col BETWEEN a AND b) IS NULL
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (paren_expr
+              (compare_expr
+                (path_expr (identifier))
+                (path_expr (identifier))
+                (path_expr (identifier))))
+            (null)))))))
+
+=================
+Select between 10
+=================
+
+select col BETWEEN x;
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (path_expr (identifier))))))
+  (ERROR
+    (path_expr (identifier))))
+
+=================
+Select between 11
+=================
+
+select x BETWEEN y and z
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+======================
+Select where between 1
+======================
+
+select * from T where T.name BETWEEN 'A' AND 'B';
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item (star)))
+      (from_list
+        (table_ref (path_expr (identifier))))
+      (compare_expr
+        (path_expr (identifier) (identifier))
+        (string_literal)
+        (string_literal)))))
+
+==========================
+Select binary in between 1
+==========================
+
+select x BETWEEN a=b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (path_expr
+              (identifier))))))))
+
+==========================
+Select binary in between 2
+==========================
+
+select x BETWEEN a > b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (path_expr
+              (identifier))))))))
+
+==========================
+Select binary in between 3
+==========================
+
+select x BETWEEN a != b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (path_expr
+              (identifier))))))))
+
+==========================
+Select binary in between 4
+==========================
+
+select x BETWEEN a << b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (path_expr
+              (identifier))))))))
+
+==========================
+Select binary in between 5
+==========================
+
+select x BETWEEN a & b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (path_expr
+              (identifier))))))))
+
+==========================
+Select binary in between 6
+==========================
+
+select x BETWEEN a ^ b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (path_expr
+              (identifier))))))))
+
+==========================
+Select binary in between 7
+==========================
+
+select x BETWEEN a and b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (binary_expr
+            (compare_expr
+              (path_expr (identifier))
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (path_expr (identifier))))))))
+
+===========================
+Select compare in between 1
+===========================
+
+select x BETWEEN a LIKE b AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (ERROR)
+            (path_expr (identifier))))))))
+
+===========================
+Select compare in between 2
+===========================
+
+select x BETWEEN a IN (b) AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr
+              (identifier))
+            (ERROR
+              (path_expr
+                (identifier)))
+            (paren_expr
+              (path_expr
+                (identifier)))
+            (path_expr
+              (identifier))))))))
+
+===========================
+Select compare in between 3
+===========================
+
+select x BETWEEN a IS FALSE AND c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr
+              (identifier))
+            (ERROR
+              (path_expr
+                (identifier)))
+            (boolean_literal)
+            (path_expr
+              (identifier))))))))
+
+==========================
+Select binary in between 8
+==========================
+
+select x BETWEEN a | b AND c | d
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))))))))
+
+=============================
+Select binary after between 1
+=============================
+
+select x BETWEEN a AND b = c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))))))))
+
+=============================
+Select binary after between 2
+=============================
+
+select x BETWEEN a AND b << c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))))))))
+
+=============================
+Select binary after between 3
+=============================
+
+select x BETWEEN a AND b >> c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))))))))
+
+=============================
+Select binary after between 4
+=============================
+
+select x BETWEEN a AND b & c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))))))))
+
+=============================
+Select binary after between 5
+=============================
+
+select x BETWEEN a AND b ^ c
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (path_expr (identifier)))))))))
+
+==========================
+Select binary in between 9
+==========================
+
+SELECT x BETWEEN y < 3 AND 9
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (integer_literal))
+            (integer_literal)))))))
+
+===========================
+Select binary in between 10
+===========================
+
+SELECT x BETWEEN y <> 3 AND 9
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (integer_literal))
+            (integer_literal)))))))
+
+===========================
+Select binary in between 11
+===========================
+
+SELECT x BETWEEN y << 3 AND 9
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (integer_literal))
+            (integer_literal)))))))
+
+===========================
+Select binary in between 12
+===========================
+
+SELECT x BETWEEN y >> 3 AND 9
+---
+(multistmt
+  (select
+    (select_spec
+      (select_list
+        (select_item
+          (compare_expr
+            (path_expr (identifier))
+            (binary_expr
+              (path_expr (identifier))
+              (integer_literal))
+            (integer_literal)))))))
