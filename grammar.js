@@ -72,7 +72,7 @@ module.exports = grammar({
 
   supertypes: $ => [
     $.expr,
-    $._stmt,
+    $.stmt,
     $._raw_type,
     $.func_expr_common_subexpr,
   ],
@@ -80,14 +80,11 @@ module.exports = grammar({
   rules: {
     /* Start Rule */
     // SQL can be definned as "stmt", "stmt;", "stmt;stmt" or "stmt; stmt;"
-    multistmt: $ => seq(
-      $._stmt,
-      repeat(seq(';', $._stmt)),
-      optional(';')
-    ),
-    _stmt: $ => choice(
+    multistmt: $ => seq($.stmt, repeat(seq(';', $.stmt)), optional(';')),
+    stmt: $ => choice(
       $._select_stmt,
       $.explain,
+      $.alter_table
     /*  $.alter_statement,
         $.analyze_statement,
         $.assert_statement,
@@ -148,26 +145,41 @@ module.exports = grammar({
       'aS',
       'As'
     )),
-    _kw_array: _ => token(reserve('array')),
-    _kw_partition: _ => token(reserve('partition')),
-    _kw_and: _ => token(KW.AND),
-    _kw_or: _ => token(KW.OR),
-    _kw_group: _ => token(KW.GROUP),
-    _kw_order: _ => token(KW.ORDER),
-    _kw_limit: _ => token(KW.LIMIT),
+    _kw_if: _ => token(choice(
+      'if',
+      'IF',
+      'iF',
+      'If'
+    )),
+    _kw_add: _ => token(reserve('add')),
+    _kw_alter: _ => token(reserve('alter')),
     _kw_analyze: _ => reserveMany('analyze', 'analyse'),
-    _kw_not: _ => token(KW.NOT),
-    _kw_like_ilike: _ => token(reserveMany('like', 'ilike')),
-    _kw_is: _ => token(reserve('is')),
-    _kw_having: _ => token(reserve('having')),
-    _kw_over: _ => token(reserve('over')),
-    _kw_window_frame: _ => token(reserveMany('rows', 'range', 'groups')),
-    _kw_unbounded: _ => token(reserve('unbounded')),
-    _kw_current: _ => token(reserve('current')),
-    _kw_collate: _ => token(reserve('collate')),
+    _kw_and: _ => token(reserveMany('and')),
+    _kw_array: _ => token(reserve('array')),
     _kw_between: _ => token(reserve('between')),
-    _kw_window: _ => token(reserve('window')),
+    _kw_collate: _ => token(reserve('collate')),
+    _kw_constraint: _ => token(reserve('constraint')),
+    _kw_current: _ => token(reserve('current')),
+    _kw_default: _ => token(reserve('default')),
+    _kw_enforced: _ => token(reserve('enforced')),
+    _kw_fill: _ => token(reserve('fill')),
+    _kw_following_preceding: _ => token(reserveMany('following', 'preceding')),
+    _kw_group: _ => token(KW.GROUP),
+    _kw_having: _ => token(reserve('having')),
     _kw_ignore_respects: _ => token(reserveMany('ignore', 'respect')),
+    _kw_is: _ => token(reserve('is')),
+    _kw_like_ilike: _ => token(reserveMany('like', 'ilike')),
+    _kw_limit: _ => token(KW.LIMIT),
+    _kw_not: _ => token(KW.NOT),
+    _kw_or: _ => token(KW.OR),
+    _kw_order: _ => token(KW.ORDER),
+    _kw_over: _ => token(reserve('over')),
+    _kw_partition: _ => token(reserve('partition')),
+    _kw_primary: _ => token(reserve('primary')),
+    _kw_unbounded: _ => token(reserve('unbounded')),
+    _kw_window: _ => token(reserve('window')),
+    _kw_window_frame: _ => token(reserveMany('rows', 'range', 'groups')),
+    _kw_set: _ => token(reserve('set')),
 
     /*==== Literals ====*/
     null: _ => token(reserve('null')),
@@ -738,7 +750,7 @@ module.exports = grammar({
       prec.left(0, seq($.table_ref, reserve('natural'), optional($.join_type), KW.JOIN, $.table_ref)) // Natural Join
     ),
     join_spec: $ => choice(
-      seq(reserve('using'), '(', $.identifier_list, ')'),
+      seq(reserve('using'), $._column_list),
       seq(reserve('on'), $.expr)
     ),
     identifier_list: $ => commaSep1($.identifier),
@@ -748,11 +760,11 @@ module.exports = grammar({
     ),
 
     _alias_clause: $ => choice(
-      seq(field('alias', $.identifier), optional(field('column_alias', $._column_alias))),
-      seq($._kw_as, field('alias', $.identifier), optional(field('column_alias', $._column_alias))),
-      seq($._kw_as, field('column_alias', $._column_alias))
+      seq(field('alias', $.identifier), optional(field('column_alias', $._column_list))),
+      seq($._kw_as, field('alias', $.identifier), optional(field('column_alias', $._column_list))),
+      seq($._kw_as, field('column_alias', $._column_list))
     ),
-    _column_alias: $ => seq('(', $.identifier_list, ')'),
+    _column_list: $ => seq('(', $.identifier_list, ')'),
     values_clause: $ => seq(reserve('values'), commaSep1(seq('(', $.expr_list, ')'))),
 
     /* func_table in Postgres ~ tvf in zetqsql */
@@ -943,6 +955,124 @@ module.exports = grammar({
       seq('(', $.utility_option_list, ')', $._explainable_stmt)
     )),
 
+    /*
+     * ConstraintAttr represents constraint attributes, which we parse as if
+     * they were independent constraint clauses, in order to avoid shift/reduce
+     * conflicts (since NOT might start either an independent NOT NULL clause
+     * or an attribute).  parse_utilcmd.c is responsible for attaching the
+     * attribute information to the preceding "real" constraint node, and for
+     * complaining if attribute clauses appear in the wrong place or wrong
+     * combinations.
+     *
+     * See also ConstraintAttributeSpec, which can be used in places where
+     * there is no parsing conflict.  (Note: currently, NOT VALID and NO INHERIT
+     * are allowed clauses in ConstraintAttributeSpec, but not here.  Someday we
+     * might need to allow them here too, but for the moment it doesn't seem
+     * useful in the statements that use ConstraintAttr.)
+     */
+    constraint_attr: _ => choice(
+      reserve('deferrable'),
+      reserveSeq('not', 'deferrable'),
+      reserveSeq('initially', 'deferred'),
+      reserveSeq('initially', 'immediate')
+    ),
+
+    /*******************************************************************************
+     *
+     * Alter Statements
+     *  
+     * ALTER [ TABLE | INDEX | SEQUENCE | VIEW | MATERIALIZED VIEW | FOREIGN TABLE ]
+     *******************************************************************************/
+    if_not_exists: $ => seq($._kw_if, reserve('not'), reserve('exists')),
+    if_exists: $ => seq($._kw_if, reserve('exists')),
+    constraint_enforcement: $ => seq(optNot($), $._kw_enforced),
+    _primary_key_or_table_constraint_spec: $ => choice($.primary_key_spec, $.table_constraint_spec), 
+    primary_key_spec: $ => seq(
+      reserve('primary'), reserve('key'), $.primary_key_elem_list,
+      optional($.constraint_enforcement), optional($.options_list)
+    ),
+    primary_key_elem_list: $ => seq('(', commaSep($.primary_key_elem), ')'),
+    primary_key_elem: $ => seq($.identifier, optional($.order_direction), optional($.nulls_order)),
+
+    table_constraint_spec: $ => choice(
+      seq(reserve('check'),'(', $.expr, ')', optional($.constraint_enforcement), optional($.options_list)),
+      seq(reserve('foreign'), reserve('key'),
+        $._column_list, $.foreign_key_ref, optional($.constraint_enforcement), optional($.options_list))
+    ),
+
+    options_list: $ => seq(reserve('options'), '(', commaSep($.options_entry), ')'),
+    options_entry: $ => seq($.identifier, '=', choice(reserve('proto'), $.expr)),
+
+    foreign_key_ref: $ => seq(reserve('references'), $.path_expr, $._column_list,
+      optional($.foreign_key_match), optional($.foreign_key_actions)),
+    foreign_key_match: $ => seq(reserve('match'), choice(
+      reserve('simple'),
+      reserve('full'),
+      reserveSeq('not', 'distinct')
+    )),
+    foreign_key_actions: $ => choice(
+      seq($.foreign_key_on_update, optional($.foreign_key_on_delete)),
+      seq($.foreign_key_on_delete, optional($.foreign_key_on_update))
+    ),
+    foreign_key_on_update: $ => seq(reserve('on'), reserve('update'), $._foreign_key_action),
+    foreign_key_on_delete: $ => seq(reserve('on'), reserve('delete'), $._foreign_key_action),
+    _foreign_key_action: _ => choice(
+      reserveSeq('no', 'action'),
+      reserve('restrict'),
+      reserve('cascade'),
+      reserveSeq('set', 'null'),
+    ),
+
+    col_qual_list: $ => seq(repeat1($.col_constraint), optional($.constraint_enforcement)),
+    col_constraint: $ => choice(
+      seq(reserve('constraint'), $.identifier, $.column_attribute),
+      $.collate_clause,
+      $.column_attribute,
+    ),
+    column_attribute: $ => choice(
+      reserveSeq('not', 'null'),
+      seq($._kw_primary, reserve('key')),
+      reserve('null'),
+      reserve('unique'),
+      reserve('hidden'),
+    ),
+    generic_option: $ => seq($.identifier, $.string_literal),
+    create_generic_options: $ => seq(reserve('options'), '(', commaSep1($.generic_option), ')'),
+    column_def: $ => seq(
+      $.identifier, $.column_schema,
+      optional($.column_storage), optional($.column_compress),
+      optional($.create_generic_options), optional($.col_qual_list)
+    ),
+    column_schema: $ => seq($._raw_type, optional($.column_info)),
+    column_info: $ => seq($._kw_default, $.expr),
+    column_position: $ => seq($._kw_following_preceding, $.identifier),
+    column_storage: $ => seq(reserve('storage'), $.identifier),
+    column_compress: $ => seq(reserve('compression'), choice($.identifier, $._kw_default)),
+    fill_using_expr: $ => seq($._kw_fill, reserve('using'), $.expr),
+
+    alter_table_cmds: $ => commaSep1($.alter_table_cmd),
+    alter_table_cmd: $ => choice(
+      seq($._kw_add, reserve('column'), optional($.if_not_exists),
+        $.column_def,
+        optional($.column_position),
+        optional($.fill_using_expr)
+      ),
+      seq($._kw_add, $._primary_key_or_table_constraint_spec),
+      seq($._kw_add, $._kw_constraint,
+        optional($.if_not_exists), $.identifier, $._primary_key_or_table_constraint_spec
+      ),
+      seq($._kw_alter, $._kw_constraint, optional($.if_exists), $.identifier,
+        choice(
+          $.constraint_enforcement,
+          seq($._kw_set, $.options_list)
+        )
+      ),
+    ),
+
+    alter_table: $ => seq(reserve('alter'), choice(
+      seq(reserve('table'), optional($.if_exists), $._relation_expr, $.alter_table_cmds),
+    )),
+
     /**************************************************************************
      *   Hint
      * We can have "@<int>", "@<int> @{hint_body}", or "@{hint_body}". The case
@@ -1025,7 +1155,7 @@ function reserveChoice(...keywords) {
 }
 
 function reserve(keyword) {
-  //return keyword;
+  // return keyword;
   return new RegExp(caseInsensitive(keyword));
 }
 

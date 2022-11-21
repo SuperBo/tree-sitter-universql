@@ -1,0 +1,1160 @@
+==================================
+Alter table add check constraint 1
+==================================
+
+alter table foo.bar ADD constraint a_is_positive check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier)
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr
+              (identifier))
+            (integer_literal)))))))
+
+==================================
+Alter table add check constraint 2
+==================================
+
+alter table foo.bar ADD constraint a_is_positive check(a>0) enforced;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier)
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr
+              (identifier))
+            (integer_literal))
+          (constraint_enforcement))))))
+
+=======================================
+Add check constraint named 'constraint'
+=======================================
+
+alter table foo.bar add constraint constraint check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+============================================================
+Add check constraint named 'constraint' with 'if not exists'
+============================================================
+
+alter table foo.bar add constraint if not exists constraint check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_not_exists)
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+======================================
+Add check constraint with name 'check'
+======================================
+
+alter table foo.bar add constraint check check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+==========================================================
+Add check constraint with name 'check' and 'if not exists'
+==========================================================
+
+alter table foo.bar add constraint if not exists check check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_not_exists)
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+======================================
+Add check constraint with name 'int64'
+======================================
+
+alter table foo.bar add constraint int64 check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+==========================================================
+Add check constraint with name 'int64' and 'if not exists'
+==========================================================
+
+alter table foo.bar add constraint if not exists int64 check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_not_exists)
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+============================
+Add unnamed check constraint
+============================
+
+alter table foo.bar add check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+================================================
+Add explicitly enforced unnamed check constraint
+================================================
+
+alter table foo.bar add check(a>0) enforced;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal))
+          (constraint_enforcement))))))
+
+=========================================
+Add not enforced unnamed check constraint
+=========================================
+
+alter table foo.bar add check(a>0) not enforced;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal))
+          (constraint_enforcement))))))
+
+=============================================================
+Alter table named 'add' to add check constraint named 'int64'
+=============================================================
+
+alter table add add constraint if not exists int64 check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_not_exists)
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+====================================================================
+Alter table named 'constraint' to add check constraint named 'int64'
+====================================================================
+
+alter table constraint add constraint if not exists int64 check(a>0);
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_not_exists)
+        (identifier)
+        (table_constraint_spec
+          (binary_expr
+            (path_expr (identifier))
+            (integer_literal)))))))
+
+
+========================
+Alter table constraint 1
+========================
+
+alter table foo.bar add;
+---
+(ERROR
+  (path_expr (identifier)
+  (identifier)))
+
+========================
+Alter table constraint 2
+========================
+
+alter table foo.bar add constraint;
+---
+(ERROR
+  (path_expr (identifier) (identifier)))
+
+========================
+Alter table constraint 3
+========================
+
+alter table foo.bar add constraint a_is_positive check;
+---
+(ERROR
+(path_expr
+  (identifier)
+  (identifier))
+  (identifier))
+
+========================
+Alter table constraint 4
+========================
+
+alter table foo.bar add constraint check(a > 0);
+---
+(ERROR
+  (path_expr
+    (identifier)
+    (identifier))
+    (identifier))
+
+===========================
+Alter table to add column 1
+===========================
+
+ALTER TABLE foo ADD COLUMN bar STRING;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))))))
+
+==============================================
+Alter table that might not exist to add column
+==============================================
+
+ALTER TABLE IF EXISTS foo ADD COLUMN bar INT64;
+---
+(multistmt
+  (alter_table
+    (if_exists)
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))))))
+
+=======================================
+Alter table to add column if not exists
+=======================================
+
+ALTER TABLE foo ADD COLUMN IF NOT EXISTS bar INT64;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_not_exists)
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))))))
+
+============================================================
+Alter table that might not exist to add column if not exists
+============================================================
+
+ALTER TABLE IF EXISTS foo ADD COLUMN IF NOT EXISTS bar INT64;
+---
+(multistmt
+  (alter_table
+    (if_exists)
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_not_exists)
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))))))
+
+====================================
+Alter table add column with position
+====================================
+
+ALTER TABLE foo ADD COLUMN bar INT64 PRECEDING baz;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))
+        (column_position
+          (identifier))))))
+
+==================================================
+Alter table add column if not exists with position
+==================================================
+
+ALTER TABLE foo ADD COLUMN IF NOT EXISTS bar STRING FOLLOWING baz;
+--
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))
+        (column_position
+          (identifier))))))
+
+===================================================
+Alter table add column with attributes and position
+===================================================
+
+ALTER TABLE foo ADD COLUMN bar STRING NOT NULL FOLLOWING baz;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+  (alter_table_cmds
+    (alter_table_cmd
+      (column_def
+        (identifier)
+        (column_schema
+          (path_expr (identifier)))
+        (col_qual_list
+          (col_constraint
+            (column_attribute))))
+    (column_position
+      (identifier))))))
+
+===========================================
+Alter table add column with fill expression
+===========================================
+
+ALTER TABLE foo ADD COLUMN bar STRING FILL USING a + b;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+=========================================
+Alter table add column primary key fill 1
+=========================================
+
+ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY ENFORCED FILL USING a + b;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (column_attribute))
+            (col_constraint
+              (column_attribute))
+            (constraint_enforcement)))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+=========================================
+Alter table add column primary key fill 2
+=========================================
+
+ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY not ENFORCED FILL USING a + b;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (column_attribute))
+            (col_constraint
+              (column_attribute))
+            (constraint_enforcement)))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+=========================================
+Alter table add column primary key fill 3
+=========================================
+
+ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY fill using a + b;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (column_attribute))
+            (col_constraint
+              (column_attribute))))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+===================================================================================
+Alter table add column with NOT NULL and PRIMARY KEY attributes and fill expression
+===================================================================================
+
+ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY FILL USING a + b;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (column_attribute))
+            (col_constraint
+              (column_attribute))))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+========================================================
+Alter table add column with position and fill expression
+========================================================
+
+ALTER TABLE foo ADD COLUMN bar STRING FOLLOWING baz FILL USING a + b;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))
+        (column_position
+          (identifier))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier))))))))
+
+======================================
+Alter table several add column actions
+======================================
+
+ALTER TABLE foo ADD COLUMN bar STRING FILL USING a + b, ADD COLUMN baz INT64;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier)))))
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))))))
+
+=========================================================
+Alter table several add column actions with special names
+=========================================================
+
+ALTER TABLE foo ADD COLUMN column STRING FILL USING a + b,
+                ADD COLUMN `column` STRING PRIMARY KEY,
+                ADD COLUMN `union` INT64;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))
+        (fill_using_expr
+          (binary_expr
+            (path_expr (identifier))
+            (path_expr (identifier)))))
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (column_attribute)))))
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))))))
+
+==================================================================
+Alter table several add column actions with special name, unquoted
+==================================================================
+
+ALTER TABLE foo ADD COLUMN union STRING;
+
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))))))))
+
+===================================
+Alter table add column with COLLATE
+===================================
+
+ALTER TABLE foo ADD COLUMN column STRING COLLATE 'unicode:ci';
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (collate_clause
+                (string_literal)))))))))
+
+===========================================================
+Alter table add column with COLLATE with query parameters 1
+===========================================================
+
+ALTER TABLE foo ADD COLUMN column STRING COLLATE @a;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (collate_clause
+                (parameter_expr
+                  (named_parameter_expr
+                    (identifier)))))))))))
+
+===========================================================
+Alter table add column with COLLATE with query parameters 2
+===========================================================
+
+ALTER TABLE foo ADD COLUMN column STRING COLLATE @@ a;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (collate_clause
+                (system_variable_expr
+                  (path_expr (identifier)))))))))))
+
+==========================================================
+Alter table add column with COLLATE with unnamed parameter
+==========================================================
+
+ALTER TABLE foo ADD column column STRING COLLATE ?;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier)))
+          (col_qual_list
+            (col_constraint
+              (collate_clause
+                (parameter_expr)))))))))
+
+====================================================
+Alter table add column with COLLATE with expressions
+====================================================
+
+ALTER TABLE foo ADD COLUMN column STRING COLLATE CONCAT('unicode', ':', 'ci');
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr
+              (identifier)))
+          (col_qual_list
+            (col_constraint
+              (collate_clause
+                (ERROR)
+                (string_literal))))))))
+  (ERROR
+    (UNEXPECTED ''')))
+
+================================================
+Alter table add column with default static value
+================================================
+
+ALTER TABLE foo ADD COLUMN bar STRING DEFAULT "default string";
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))
+            (column_info
+              (string_literal))))))))
+
+============================================
+Alter table add column with default function
+============================================
+
+ALTER TABLE foo ADD COLUMN bar STRING DEFAULT SESSION_USER();
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (column_def
+          (identifier)
+          (column_schema
+            (path_expr (identifier))
+            (column_info
+              (func_expr
+                (func_app
+                  (path_expr (identifier)))))))))))
+
+=================================================
+Alter table to add unnamed foreign key constraint
+=================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) options();
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier)))
+          (options_list))))))
+
+=====================================================================
+Alter table to add unnamed explicitly enforced foreign key constraint
+=====================================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) ENFORCED;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier)))
+          (constraint_enforcement))))))
+
+==============================================================
+Alter table to add unnamed not-enforced foreign key constraint
+==============================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) NOT ENFORCED;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier)))
+          (constraint_enforcement))))))
+
+===============================================
+Alter table to add named foreign key constraint
+===============================================
+
+ALTER TABLE foo ADD CONSTRAINT bar FOREIGN KEY(A) REFERENCES T(B) ENFORCED;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier)))
+          (constraint_enforcement))))))
+
+=======================================================
+Alter table to add foreign key constraint named foreign
+=======================================================
+
+ALTER TABLE foo ADD CONSTRAINT foreign FOREIGN KEY(A) REFERENCES T(B) ENFORCED;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier)))
+          (constraint_enforcement))))))
+
+====================================================
+Alter table to add multi keys foreign key constraint
+====================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A, B) REFERENCES T(A, B) ENFORCED;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier)
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier)
+              (identifier)))
+          (constraint_enforcement))))))
+
+=====================================================
+Alter table to add foreign key with on delete cascade
+=====================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on delete cascade;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier))
+            (foreign_key_actions
+              (foreign_key_on_delete))))))))
+
+=======================================================
+Alter table to add foreign key with on delete no action
+=======================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on delete no action;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr
+              (identifier))
+            (identifier_list
+              (identifier))
+            (foreign_key_actions
+              (foreign_key_on_delete))))))))
+
+================================================
+Alter table to add foreign key with match simple
+================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) match simple;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr
+              (identifier))
+            (identifier_list
+              (identifier))
+            (foreign_key_match)))))))
+
+==============================================
+Alter table to add foreign key with match full
+==============================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) match full;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier))
+            (foreign_key_match)))))))
+
+=======================================================
+Alter table to add foreign key with on update no action
+=======================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on update no action;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier))
+            (foreign_key_actions
+              (foreign_key_on_update))))))))
+
+=====================================================
+Alter table to add foreign key with on update cascade
+=====================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on update cascade;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier))
+            (foreign_key_actions
+              (foreign_key_on_update))))))))
+
+=======================================================
+Alter table to add foreign key with multiple attributes
+=======================================================
+
+ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) match full on update cascade on delete cascade;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (table_constraint_spec
+          (identifier_list
+            (identifier))
+          (foreign_key_ref
+            (path_expr (identifier))
+            (identifier_list
+              (identifier))
+            (foreign_key_match)
+            (foreign_key_actions
+              (foreign_key_on_update)
+              (foreign_key_on_delete))))))))
+
+=======================================
+Alter table constraint without enforced
+=======================================
+
+ALTER table foo alter constraint bar;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (constraint_enforcement
+          (MISSING _kw_enforced))))))
+
+====================================
+Alter table constraint with enforced
+====================================
+
+ALTER table foo alter constraint bar enforced;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (constraint_enforcement)))))
+
+==========================================
+Alter table constraint exist with enforced
+==========================================
+
+ALTER TABLE foo ALTER CONSTRAINT IF EXISTS bar ENFORCED
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_exists)
+        (identifier)
+        (constraint_enforcement)))))
+
+===================================
+Alter table constraint not enforced
+===================================
+
+ALTER TABLE foo ALTER CONSTRAINT bar NOT ENFORCED
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (constraint_enforcement)))))
+
+==================================
+Alter table constraint set options
+==================================
+
+ALTER TABLE foo ALTER CONSTRAINT bar SET OPTIONS()
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (options_list)))))
+
+==============================================
+Alter table constraint set optiones with exist
+==============================================
+
+ALTER TABLE foo ALTER CONSTRAINT IF EXISTS bar SET OPTIONS(opt_a = 1)
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (if_exists)
+        (identifier)
+        (options_list
+          (options_entry
+            (identifier)
+            (integer_literal)))))))
+
+======================================
+Alter table constraint set two options
+======================================
+
+ALTER table foo alter constraint bar set options (opt_a = 1, opt_b = 2);
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_cmd
+        (identifier)
+        (options_list
+          (options_entry
+            (identifier)
+            (integer_literal))
+          (options_entry
+            (identifier)
+            (integer_literal)))))))
