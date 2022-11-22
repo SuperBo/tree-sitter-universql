@@ -58,6 +58,107 @@ const PREC = {
 module.exports = grammar({
   name: 'UniverSQL',
 
+  externals: $ => [
+    $.kw_if,
+    $.kw_as,
+    $.kw_at,
+    $.kw_in,
+    $.kw_by,
+    $.kw_of,
+    $._kw_is,
+    $.kw_no,
+    $.kw_on,
+    $._kw_or,
+    $.kw_to,
+    $.kw_and,
+    $.kw_asc,
+    $.kw_end,
+    $.kw_all,
+    $.kw_case,
+    $.kw_cast,
+    $.kw_cube,
+    $.kw_left,
+    $.kw_desc,
+    $.kw_hash,
+    $.kw_like,
+    $.kw_else,
+    $.kw_any,
+    $.kw_join,
+    $.kw_for,
+    $.kw_full,
+    $.kw_from,
+    $.kw_enum,
+    $.kw_then,
+    $.kw_new,
+    $.kw_into,
+    $.kw_when,
+    $.kw_over,
+    $._kw_set,
+    $.kw_null,
+    $._kw_not,
+    $.kw_some,
+    $.kw_with,
+    $.kw_rows,
+    $.kw_true,
+    $.kw_false,
+    $.kw_define,
+    $.kw_fetch,
+    $.kw_range,
+    $.kw_merge,
+    $.kw_where,
+    $.kw_escape,
+    $._kw_select,
+    $.kw_create,
+    $.kw_cross,
+    $._kw_having,
+    $.kw_group,
+    $.kw_except,
+    $.kw_inner,
+    $.kw_limit,
+    $.kw_ignore,
+    $.kw_order,
+    $.kw_right,
+    $.kw_array,
+    $.kw_using,
+    $.kw_assert,
+    $.kw_union,
+    $.kw_groups,
+    $.kw_exists,
+    $.kw_proto,
+    $.kw_nulls,
+    $.kw_treat,
+    $.kw_pivot,
+    $.kw_struct,
+    $.kw_lookup,
+    $.kw_within,
+    $.kw_outer,
+    $._kw_window,
+    $.kw_rollup,
+    $.kw_unnest,
+    $.kw_collate,
+    $.kw_between,
+    $.kw_default,
+    $.kw_exclude,
+    $.kw_current,
+    $.kw_extract,
+    $.kw_lateral,
+    $.kw_natural,
+    $.kw_respect,
+    $.kw_unpivot,
+    $.kw_contains,
+    $.kw_distinct,
+    $.kw_grouping,
+    $.kw_interval,
+    $.kw_preceding,
+    $.kw_following,
+    $.kw_partition,
+    $._kw_unbounded,
+    $.kw_intersect,
+    $.kw_recursive,
+    $.kw_tablesample,
+    $._unquoted_ident
+  ], 
+
   word: $ => $._unquoted_ident,
 
   inline: $ => [
@@ -83,8 +184,8 @@ module.exports = grammar({
     multistmt: $ => seq($.stmt, repeat(seq(';', $.stmt)), optional(';')),
     stmt: $ => choice(
       $._select_stmt,
-      $.explain,
-      $.alter_table
+      // $.explain,
+      // $.alter_table
     /*  $.alter_statement,
         $.analyze_statement,
         $.assert_statement,
@@ -139,47 +240,35 @@ module.exports = grammar({
     ),
 
     /*==== Keywwords ====*/
-    _kw_as: _ => token(choice(
-      'as',
-      'AS',
-      'aS',
-      'As'
-    )),
-    _kw_if: _ => token(choice(
-      'if',
-      'IF',
-      'iF',
-      'If'
-    )),
     _kw_add: _ => token(reserve('add')),
     _kw_alter: _ => token(reserve('alter')),
     _kw_analyze: _ => reserveMany('analyze', 'analyse'),
-    _kw_and: _ => token(reserveMany('and')),
-    _kw_array: _ => token(reserve('array')),
-    _kw_between: _ => token(reserve('between')),
-    _kw_collate: _ => token(reserve('collate')),
+    // _kw_and: _ => token(reserveMany('and')),
+    // _kw_array: _ => token(reserve('array')),
+    // _kw_between: _ => token(reserve('between')),
+    // _kw_collate: _ => token(reserve('collate')),
     _kw_constraint: _ => token(reserve('constraint')),
-    _kw_current: _ => token(reserve('current')),
-    _kw_default: _ => token(reserve('default')),
+    // _kw_current: _ => token(reserve('current')),
+    // _kw_default: _ => token(reserve('default')),
     _kw_enforced: _ => token(reserve('enforced')),
     _kw_fill: _ => token(reserve('fill')),
     _kw_following_preceding: _ => token(reserveMany('following', 'preceding')),
-    _kw_group: _ => token(KW.GROUP),
-    _kw_having: _ => token(reserve('having')),
+    // _kw_group: _ => token(KW.GROUP),
+    // _kw_having: _ => token(reserve('having')),
     _kw_ignore_respects: _ => token(reserveMany('ignore', 'respect')),
-    _kw_is: _ => token(reserve('is')),
+    // _kw_is: _ => token(reserve('is')),
     _kw_like_ilike: _ => token(reserveMany('like', 'ilike')),
-    _kw_limit: _ => token(KW.LIMIT),
-    _kw_not: _ => token(KW.NOT),
-    _kw_or: _ => token(KW.OR),
+    // _kw_limit: _ => token(KW.LIMIT),
+    // _kw_not: _ => token(KW.NOT),
+    // _kw_or: _ => token(KW.OR),
     _kw_order: _ => token(KW.ORDER),
-    _kw_over: _ => token(reserve('over')),
+    // _kw_over: _ => token(reserve('over')),
     _kw_partition: _ => token(reserve('partition')),
     _kw_primary: _ => token(reserve('primary')),
-    _kw_unbounded: _ => token(reserve('unbounded')),
-    _kw_window: _ => token(reserve('window')),
+    // _kw_unbounded: _ => token(reserve('unbounded')),
+    // _kw_window: _ => token(reserve('window')),
     _kw_window_frame: _ => token(reserveMany('rows', 'range', 'groups')),
-    _kw_set: _ => token(reserve('set')),
+    // _kw_set: _ => token(reserve('set')),
 
     /*==== Literals ====*/
     null: _ => token(reserve('null')),
@@ -191,7 +280,7 @@ module.exports = grammar({
       $.string_literal
     ),
     bignumeric_literal: $ => seq(
-      reserveMany('bigdecimal', 'bigdecimal'),
+      reserveMany('bigdecimal', 'bignumeric'),
       $.string_literal
     ),
     date_or_time_literal: $ => seq(
@@ -274,7 +363,7 @@ module.exports = grammar({
     /* Identifer */
     identifier: $ => choice($._unquoted_ident, $._backtick_text),
     general_identifier: $ => choice($._unquoted_general_ident, $._backtick_text),
-    _unquoted_ident: _ => /[a-zA-Z_][a-zA-Z_0-9]*/,
+    // _unquoted_ident: _ => /[a-zA-Z_][a-zA-Z_0-9]*/,
     _unquoted_general_ident: _ => /[a-zA-Z_0-9]+/,
     _backtick_text: $ => seq(
       '`',
@@ -285,7 +374,7 @@ module.exports = grammar({
     /* Type */
     // Unlike other type names, 'INTERVAL' is a reserved keyword.
     _type_name: $ => choice($.path_expr, KW.INTERVAL),
-    array_type: $ => seq($._kw_array, '<', $.type, '>'),
+    array_type: $ => seq($.kw_array, '<', $.type, '>'),
     struct_field: $ => seq(optional($.identifier), $.type),
     //struct_field_list: $ => commaSep1($.struct_field),
     struct_type: $ => seq(token(prec(1, reserve('struct'))), '<', optional(commaSep1($.struct_field)), '>'), 
@@ -307,7 +396,7 @@ module.exports = grammar({
       $.parameter_expr,
       $.system_variable_expr
     ),
-    collate_clause: $ => seq($._kw_collate, $._string_lit_or_param),
+    collate_clause: $ => seq($.kw_collate, $._string_lit_or_param),
 
     /* Expression grammar
      * Take inpiration from Postgres Expression Grammar
@@ -325,7 +414,7 @@ module.exports = grammar({
     ),
     logical_unary_expr: $ => prec(PREC.LOGICAL_NOT, seq($._kw_not, $.expr)),
     logical_binary_expr: $ => choice(
-      prec.left(PREC.LOGICAL_AND, seq($.expr, $._kw_and, $.expr)),
+      prec.left(PREC.LOGICAL_AND, seq($.expr, $.kw_and, $.expr)),
       prec.left(PREC.LOGICAL_OR, seq($.expr, $._kw_or, $.expr)),
     ),
     compare_expr: $ => choice(
@@ -408,7 +497,7 @@ module.exports = grammar({
 
     /* Subquery */
     subquery_expr: $ => choice(
-      seq($._kw_array, $.select_in_parens),
+      seq($.kw_array, $.select_in_parens),
       seq(reserve('exists'), optional($.hint), $.select_in_parens),
     ),
 
@@ -476,7 +565,7 @@ module.exports = grammar({
      */
     func_alias_clause: $ => choice(
 			$._alias_clause,
-			seq($._kw_as, optional($.identifier), '(', $.table_func_element_list, ')'),
+			seq($.kw_as, optional($.identifier), '(', $.table_func_element_list, ')'),
 			seq($.identifier, '(', $.table_func_element_list, ')'),
     ),
 
@@ -502,7 +591,7 @@ module.exports = grammar({
     _format: $ => seq(reserve('format'), $.expr),
     cast_expr: $ => seq(
       token(prec(1, reserveMany('cast', 'safe_cast'))),
-      '(', $.expr, $._kw_as, $.type, optional(field('format', $._format)), ')'
+      '(', $.expr, $.kw_as, $.type, optional(field('format', $._format)), ')'
     ),
     extract_expr: $ => seq(
       reserve('extract'), '(', $.expr, KW.FROM, $.expr, optional($._at_time_zone), ')'
@@ -524,7 +613,7 @@ module.exports = grammar({
     normalize_expr: $ => seq(reserve('normalize'), '(', $.expr, optional(seq(',', $.unicode_normal_form)),')'),
     overlay_expr: $ => seq(reserve('overlay'), '(', optional(choice($.overlay_list, $.func_arg_list)), ')'),
     position_expr: $ => seq(reserve('position'), '(', $._expr_primary, KW.IN, $._expr_primary, ')'),
-    treat_expr: $ => seq(reserve('treat'), '(', $.expr, $._kw_as, $.type, ')'),
+    treat_expr: $ => seq(reserve('treat'), '(', $.expr, $.kw_as, $.type, ')'),
     current_time_expr: $ =>  seq(
       reserveMany('current_time', 'current_timestamp', 'localtime', 'localtimestamp'),
       optional(seq('(', $.integer_literal, ')'))
@@ -548,7 +637,7 @@ module.exports = grammar({
       seq(reserve('xmlparse'), '(', $.document_or_content, $.expr, optional($.xml_whitespace_option), ')'),
       seq(reserve('xmlpi'), '(', reserve('name'), $.path_expr, optional(seq(',', $.expr)), ')'),
       seq(reserve('xmlroot'), '(', $.expr ,',', $.xml_root_version, optional($.xml_root_standalone), ')'),
-      seq(reserve('xmlserialize'), '(', $.document_or_content, $.expr, $._kw_as, $.type, ')')
+      seq(reserve('xmlserialize'), '(', $.document_or_content, $.expr, $.kw_as, $.type, ')')
     ),
 
     xml_root_version: $ => choice(
@@ -562,7 +651,7 @@ module.exports = grammar({
     )),
     xml_attributes: $ => seq(reserve('xmlattributes') ,'(', $.xml_attribute_list, ')'),
     xml_attribute_list:	$ => seq($.xml_attribute_el, optional(seq(',', $.xml_attribute_el))),
-    xml_attribute_el: $ => seq($.expr, optional(seq($._kw_as, $.path_expr))),
+    xml_attribute_el: $ => seq($.expr, optional(seq($.kw_as, $.path_expr))),
     document_or_content:  _ => reserveMany('document', 'content'),
     xml_whitespace_option: _ => seq(reserveMany('preserve', 'strip'), reserve('whitespace')),
     // We allow several variants for SQL and other compatibility.
@@ -583,7 +672,7 @@ module.exports = grammar({
     ),
     xml_namespace_list: $ => commaSep1($.xml_namespace_element),
     xml_namespace_element: $ => choice(
-      seq($._expr_primary, $._kw_as, $.identifier),
+      seq($._expr_primary, $.kw_as, $.identifier),
       seq(KW.DEFAULT, $._expr_primary),
     ),
     xmlexists_argument: $ => seq(reserve('passing'), choice(
@@ -613,7 +702,7 @@ module.exports = grammar({
     nulls_order: _ => seq(reserve('nulls'), reserveMany('first', 'last')),
     within_group_clause: $ => seq(reserve('within'), reserve('group'),'(', $.order_by_clause, ')'),
     filter_clause: $ => seq(reserve('filter'), '(', KW.WHERE, $.expr,')'),
-    _over_clause: $ => seq($._kw_over, field('window', $.window_spec)),
+    _over_clause: $ => seq($.kw_over, field('window', $.window_spec)),
     _partition_clause: $ => seq($._kw_partition, KW.BY, field('partition', $.expr_list)),
     window_spec: $ => choice(
       $.identifier,
@@ -627,13 +716,13 @@ module.exports = grammar({
       $._kw_window_frame,
       choice(
         $.window_frame_bound,
-        seq($._kw_between, $.window_frame_bound, reserve('and'), $.window_frame_bound)
+        seq($.kw_between, $.window_frame_bound, reserve('and'), $.window_frame_bound)
       ),
       optional($.window_exclusion_clause)
     ),
     window_frame_bound: $ => choice(
       seq($._kw_unbounded, reserveMany('preceding', 'following')),
-      seq($._kw_current, reserve('row')),
+      seq($.kw_current, reserve('row')),
       seq($._expr_primary, reserveMany('preceding', 'following'))
     ),
     window_exclusion_clause: _ => seq(reserve('exclude'), choice(
@@ -644,7 +733,7 @@ module.exports = grammar({
     )),
     expr_list: $ => seq($.expr, repeat(seq(',', $.expr))),
 
-    _array_construct_prefix: $ => choice($._kw_array, $.array_type),
+    _array_construct_prefix: $ => choice($.kw_array, $.array_type),
     array_expr: $ => seq(optional($._array_construct_prefix), '[', optional($.expr_list), ']'),
     /*
     _format: $ => seq(reserve('format'), $.expression, optional($._at_time_zone)),
@@ -698,7 +787,7 @@ module.exports = grammar({
     
     // select_spec ~ 7.16 <query specification> in foundation grammar
     select_spec: $ => seq(
-      token(prec(1, reserve('select'))), optional($.set_quantifier),
+      $._kw_select, optional($.set_quantifier),
       field('select_list', $.select_list),
       field('into', optional($.into_clause)),
       field('from', optional($._from_clause)),
@@ -731,7 +820,7 @@ module.exports = grammar({
 
     // Specify a table derived from one or more tables.
     // ~ <from clause> in foundation grammar
-    _from_clause: $ => seq(token(prec(1, KW.FROM)), $.from_list),
+    _from_clause: $ => seq($.kw_from, $.from_list),
     from_list: $ => commaSep1($.table_ref),
     // Reference a table ~ <table reference> in foundation grammar.
     table_ref: $ =>  choice(
@@ -761,8 +850,8 @@ module.exports = grammar({
 
     _alias_clause: $ => choice(
       seq(field('alias', $.identifier), optional(field('column_alias', $._column_list))),
-      seq($._kw_as, field('alias', $.identifier), optional(field('column_alias', $._column_list))),
-      seq($._kw_as, field('column_alias', $._column_list))
+      seq($.kw_as, field('alias', $.identifier), optional(field('column_alias', $._column_list))),
+      seq($.kw_as, field('column_alias', $._column_list))
     ),
     _column_list: $ => seq('(', $.identifier_list, ')'),
     values_clause: $ => seq(reserve('values'), commaSep1(seq('(', $.expr_list, ')'))),
@@ -772,7 +861,7 @@ module.exports = grammar({
       seq($.func_expr_windowless, optional(reserveSeq('with', 'ordinality'))),
       seq(reserveSeq('rows', 'from'), '(', commaSep1($.rowsfrom_item), ')', optional(reserve('ordinality')))
     ),
-    rowsfrom_item: $ => seq($.func_expr_windowless, optional(seq($._kw_as, '(', $.table_func_element_list, ')'))),
+    rowsfrom_item: $ => seq($.func_expr_windowless, optional(seq($.kw_as, '(', $.table_func_element_list, ')'))),
     table_func_element_list: $ => commaSep1($.table_func_element),
     table_func_element: $ => seq($.identifier, $.type),
 
@@ -782,7 +871,7 @@ module.exports = grammar({
     ),
     _limit_offset: $ => seq($.limit_clause, optional($.offset_clause)),
     limit_clause: $ => choice(
-      seq($._kw_limit, $._select_limit_val),
+      seq($.kw_limit, $._select_limit_val),
       seq(
         reserve('fetch'), reserveMany('first', 'next'),
         optional($.select_fetch_first_val),
@@ -831,7 +920,7 @@ module.exports = grammar({
       seq($.star, $._star_modifiers),
       seq($.expr, field('star', $.dot_star)), //optional($._star_modifiers)),
     ),
-    _expr_opt_as_alias: $ => seq($.expr, optional($._kw_as), field('alias', $.identifier)),
+    _expr_opt_as_alias: $ => seq($.expr, optional($.kw_as), field('alias', $.identifier)),
     star: $ => field('star', '*'),
     dot_star: $ => token(prec(1, seq('.', '*'))),
     _star_modifiers: $ => choice(
@@ -842,7 +931,7 @@ module.exports = grammar({
     _star_except: $ => seq(token(prec(2, reserve('except'))), '(', field('except', $.identifier_list), ')'),
     _star_replace: $ => seq(reserve('replace'), '(', field('replace', $.star_replace_list), ')'),
     star_replace_list: $ => seq($.star_replace_item, repeat(seq(',', $.star_replace_item))),
-    star_replace_item: $ => seq($.expr, $._kw_as, $.identifier),
+    star_replace_item: $ => seq($.expr, $.kw_as, $.identifier),
 
     // Postgres relation_expr
     // TODO: revise  and check with zetasql
@@ -868,7 +957,7 @@ module.exports = grammar({
     /* Where clause in select */
     _where_clause: $ => seq(token(prec(1, reserve('where'))), $.expr),
     /* Group by and having clause */
-    _group_by_clause: $ => seq($._kw_group, KW.BY, optional($.set_quantifier), $.group_by_list),
+    _group_by_clause: $ => seq($.kw_group, KW.BY, optional($.set_quantifier), $.group_by_list),
     group_by_list: $ => commaSep1($._group_by_item),
     _group_by_item: $ => choice(
       $.expr,
@@ -882,7 +971,7 @@ module.exports = grammar({
 
     /* Window Definition */
     window_clause: $ => seq($._kw_window, commaSep1($.window_definition)),
-    window_definition: $ => seq($.identifier, $._kw_as, $.window_spec),
+    window_definition: $ => seq($.identifier, $.kw_as, $.window_spec),
     
     pivot_value: $ => $._expr_opt_as_alias,
     pivot_list: $ => commaSep1($.pivot_value),
@@ -896,7 +985,7 @@ module.exports = grammar({
     ),
     unpivot_in_item: $ => seq(
       $.path_expr_list_opt_parens,
-      optional(seq(optional($._kw_as), choice($.integer_literal, $.string_literal)))
+      optional(seq(optional($.kw_as), choice($.integer_literal, $.string_literal)))
     ),
     unpivot_in_list: $ => commaSep1($.unpivot_in_item),
     unpivot_clause: $ => seq(
@@ -918,7 +1007,7 @@ module.exports = grammar({
     _with_clause: $ => seq(reserve('with'), reserveOpt('recursive'), field('with', $.with_list)),
     with_list: $ => commaSep1($.common_table_expr),
     common_table_expr: $ => seq(
-      $.identifier, optional($.identifier_list), $._kw_as, optional(seq(optNot(), reserve('materialized'))),
+      $.identifier, optional($.identifier_list), $.kw_as, optional(seq(optNot(), reserve('materialized'))),
       '(', $._preparable_stmt, ')', optional($.search_clause), optional($.cycle_clause)
     ),
     _preparable_stmt: $ => choice($._select_stmt),//TOO: add more kind of statements later.
@@ -983,8 +1072,8 @@ module.exports = grammar({
      *  
      * ALTER [ TABLE | INDEX | SEQUENCE | VIEW | MATERIALIZED VIEW | FOREIGN TABLE ]
      *******************************************************************************/
-    if_not_exists: $ => seq($._kw_if, reserve('not'), reserve('exists')),
-    if_exists: $ => seq($._kw_if, reserve('exists')),
+    if_not_exists: $ => seq($.kw_if, reserve('not'), reserve('exists')),
+    if_exists: $ => seq($.kw_if, reserve('exists')),
     constraint_enforcement: $ => seq(optNot($), $._kw_enforced),
     _primary_key_or_table_constraint_spec: $ => choice($.primary_key_spec, $.table_constraint_spec), 
     primary_key_spec: $ => seq(
@@ -1044,10 +1133,10 @@ module.exports = grammar({
       optional($.create_generic_options), optional($.col_qual_list)
     ),
     column_schema: $ => seq($._raw_type, optional($.column_info)),
-    column_info: $ => seq($._kw_default, $.expr),
+    column_info: $ => seq($.kw_default, $.expr),
     column_position: $ => seq($._kw_following_preceding, $.identifier),
     column_storage: $ => seq(reserve('storage'), $.identifier),
-    column_compress: $ => seq(reserve('compression'), choice($.identifier, $._kw_default)),
+    column_compress: $ => seq(reserve('compression'), choice($.identifier, $.kw_default)),
     fill_using_expr: $ => seq($._kw_fill, reserve('using'), $.expr),
 
     alter_table_cmds: $ => commaSep1($.alter_table_cmd),
