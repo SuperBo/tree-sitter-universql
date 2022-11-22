@@ -798,8 +798,8 @@ module.exports = grammar({
       field('pivot', optional(choice($.pivot_clause, $.unpivot_clause))),
     ),
 
-    set_operator: _ => token(prec(1, reserveMany('union', 'intersect', 'except'))),
-    set_quantifier: _ => token(prec(1, reserveMany('all', 'distinct'))),
+    set_operator: _ => token(reserveMany('union', 'intersect', 'except')),
+    set_quantifier: _ => token(reserveMany('all', 'distinct')),
 
     into_clause: $ => seq(reserve('into'), $.into_temp_table),
     into_temp_table: $ => choice(

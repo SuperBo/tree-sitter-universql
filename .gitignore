@@ -107,4 +107,3 @@ dist
 src/parser.c
 target/
 bindings/
-binding.gyp
