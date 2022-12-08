@@ -1,33 +1,19 @@
 const KW = {
-  AND: reserve('and'),
-  ASYMETRIC: reserve('asymetric'),
   BETWEEN: reserve('between'),
   BY: reserve('by'),
   DEFAULT: reserve('default'),
-  DISTINCT: reserve('distinct'),
   DOCUMENT_P: reserve('document_p'),
   EXPLAIN: reserve('explain'),
   FOR: reserve('for'),
-  FROM: reserve('from'),
-  GROUP: reserve('group'),
-  ILIKE: reserve('ilike'),
   IN: reserve('in'),
   INTERVAL: reserve('interval'),
-  IS: reserve('is'),
-  ISNULL: reserve('isnull'),
   JOIN: reserve('join'),
-  LIKE: reserve('like'),
-  LIMIT: reserve('limit'),
-  NOT: reserve('not'),
-  NOTNULL: reserve('notnull'),
-  OR: reserve('or'),
-  ORDER: reserve('order'),
   SIMILAR: reserve('similar'),
   SYMMETRIC: reserve('symmetric'),
   TO: reserve('to'),
   USING: reserve('using'),
   VERBOSE: reserve('verbose'),
-  WHERE: reserve('where'),
+  ONLY: reserve('only'),
 };
 
 const PREC = {
@@ -75,6 +61,7 @@ module.exports = grammar({
     $.stmt,
     $._raw_type,
     $.func_expr_common_subexpr,
+    $.alter_table_cmd
   ],
 
   rules: {
@@ -140,22 +127,26 @@ module.exports = grammar({
 
     /*==== Keywwords ====*/
     _kw_as: _ => token(choice(
-      'as',
-      'AS',
-      'aS',
-      'As'
+      'as', 'AS', 'aS', 'As'
     )),
     _kw_if: _ => token(choice(
-      'if',
-      'IF',
-      'iF',
-      'If'
+      'if', 'IF', 'iF', 'If'
     )),
+    _kw_or: _ => token(choice(
+      'or', 'OR', 'oR', 'Or'
+    )),
+    _kw_is: _ => token(choice(
+      'is', 'IS', 'iS', 'Is'
+    )),
+    _kw_where: _ => token(reserve('where')),
+    _kw_struct: _ => token(reserve('struct')),
     _kw_add: _ => token(reserve('add')),
     _kw_alter: _ => token(reserve('alter')),
-    _kw_analyze: _ => reserveMany('analyze', 'analyse'),
-    _kw_and: _ => token(reserveMany('and')),
+    _kw_analyze: _ => token(/[Aa][Nn][An][Ll][Yy][ZSzs][Ee]/),
+    _kw_and: _ => token(reserve('and')),
     _kw_array: _ => token(reserve('array')),
+    _kw_drop: _ => token(reserve('drop')),
+    _kw_from: _ => token(reserve('from')),
     _kw_between: _ => token(reserve('between')),
     _kw_collate: _ => token(reserve('collate')),
     _kw_constraint: _ => token(reserve('constraint')),
@@ -164,15 +155,13 @@ module.exports = grammar({
     _kw_enforced: _ => token(reserve('enforced')),
     _kw_fill: _ => token(reserve('fill')),
     _kw_following_preceding: _ => token(reserveMany('following', 'preceding')),
-    _kw_group: _ => token(KW.GROUP),
+    _kw_group: _ => token(reserve('group')),
     _kw_having: _ => token(reserve('having')),
     _kw_ignore_respects: _ => token(reserveMany('ignore', 'respect')),
-    _kw_is: _ => token(reserve('is')),
-    _kw_like_ilike: _ => token(reserveMany('like', 'ilike')),
-    _kw_limit: _ => token(KW.LIMIT),
-    _kw_not: _ => token(KW.NOT),
-    _kw_or: _ => token(KW.OR),
-    _kw_order: _ => token(KW.ORDER),
+    _kw_like_ilike: _ => token(/[Ii]?[Ll][Ii][Kk][Ee]/),
+    _kw_limit: _ => token(reserve('limit')),
+    _kw_not: _ => token(reserve('not')),
+    _kw_order: _ => token(reserve('order')),
     _kw_over: _ => token(reserve('over')),
     _kw_partition: _ => token(reserve('partition')),
     _kw_primary: _ => token(reserve('primary')),
@@ -180,6 +169,7 @@ module.exports = grammar({
     _kw_window: _ => token(reserve('window')),
     _kw_window_frame: _ => token(reserveMany('rows', 'range', 'groups')),
     _kw_set: _ => token(reserve('set')),
+    _kw_select: _ => token(reserve('select')),
 
     /*==== Literals ====*/
     null: _ => token(reserve('null')),
@@ -288,7 +278,7 @@ module.exports = grammar({
     array_type: $ => seq($._kw_array, '<', $.type, '>'),
     struct_field: $ => seq(optional($.identifier), $.type),
     //struct_field_list: $ => commaSep1($.struct_field),
-    struct_type: $ => seq(token(prec(1, reserve('struct'))), '<', optional(commaSep1($.struct_field)), '>'), 
+    struct_type: $ => seq($._kw_struct, '<', optional(commaSep1($.struct_field)), '>'), 
     _raw_type: $ => choice($.array_type, $.struct_type, $._type_name),
     _type_param_field: $ => choice(
       $.integer_literal,
@@ -329,14 +319,14 @@ module.exports = grammar({
       prec.left(PREC.LOGICAL_OR, seq($.expr, $._kw_or, $.expr)),
     ),
     compare_expr: $ => choice(
-      prec(PREC.COMPARE, seq($._expr_primary, optNot(), $._kw_like_ilike, $._expr_primary)),
-      prec(PREC.COMPARE, seq($._expr_primary, optNot(), reserve('similar'), KW.TO, $._expr_primary)),
-      prec(PREC.COMPARE, seq($._expr_primary, $._kw_is, optional(KW.NOT),
+      prec(PREC.COMPARE, seq($._expr_primary, optNot($), $._kw_like_ilike, $._expr_primary)),
+      prec(PREC.COMPARE, seq($._expr_primary, optNot($), reserve('similar'), KW.TO, $._expr_primary)),
+      prec(PREC.COMPARE, seq($._expr_primary, $._kw_is, optNot($),
         choice($.null, $.boolean_literal, $.unknow))),
-      prec(PREC.COMPARE, seq($._expr_primary, choice(KW.NOTNULL, KW.ISNULL))),
-      prec(PREC.COMPARE, seq($._expr_primary, optional(KW.ASYMETRIC), KW.BETWEEN, $._expr_primary, KW.AND, $._expr_primary)),
-      prec(PREC.COMPARE, seq($._expr_primary, optNot(), KW.BETWEEN, KW.SYMMETRIC, $._expr_primary, KW.AND, $._expr_primary)),
-      prec(PREC.COMPARE, seq($._expr_primary, $._kw_is, optNot(), optional($.unicode_normal_form), reserve('normalized'))),
+      prec(PREC.COMPARE, seq($._expr_primary, reserveChoice('notnull', 'isnull'))),
+      prec(PREC.COMPARE, seq($._expr_primary, reserveOpt('asymetric'), KW.BETWEEN, $._expr_primary, $._kw_and, $._expr_primary)),
+      prec(PREC.COMPARE, seq($._expr_primary, optNot($), KW.BETWEEN, KW.SYMMETRIC, $._expr_primary, $._kw_and, $._expr_primary)),
+      prec(PREC.COMPARE, seq($._expr_primary, $._kw_is, optNot($), optional($.unicode_normal_form), reserve('normalized'))),
     ),
     _expr_primary: $ => choice(
       $._c_expr,
@@ -485,7 +475,7 @@ module.exports = grammar({
       seq($.path_expr, '.', '*'),
     ), */
     overlay_list: $ => seq(
-      $.expr, reserve('placing'), $.expr, KW.FROM, $.expr,
+      $.expr, reserve('placing'), $.expr, $._kw_from, $.expr,
       optional(seq(KW.FOR, $.expr))
     ),
     case_expr: $ => seq(
@@ -505,19 +495,19 @@ module.exports = grammar({
       '(', $.expr, $._kw_as, $.type, optional(field('format', $._format)), ')'
     ),
     extract_expr: $ => seq(
-      reserve('extract'), '(', $.expr, KW.FROM, $.expr, optional($._at_time_zone), ')'
+      reserve('extract'), '(', $.expr, $._kw_from, $.expr, optional($._at_time_zone), ')'
     ),
     substr_list: $ => choice(
-      seq($.expr, KW.FROM, $.expr, optional(seq(KW.FOR, $.expr))),
-      seq($.expr, KW.FOR, $.expr, KW.FROM,  $.expr),
+      seq($.expr, $._kw_from, $.expr, optional(seq(KW.FOR, $.expr))),
+      seq($.expr, KW.FOR, $.expr, $._kw_from,  $.expr),
       seq($.expr, reserve('similar'), $.expr, reserve('escape'), $.expr)
     ),
     substr_expr: $ => seq(reserve('substring'), '(', choice(
       $.substr_list, optional($.func_arg_list)
     ), ')'),
     trim_list: $ => choice(
-      seq($.expr, KW.FROM, $.expr_list),
-      seq(KW.FROM, $.expr_list),
+      seq($.expr, $._kw_from, $.expr_list),
+      seq($._kw_from, $.expr_list),
       $.expr_list
     ),
     trim_expr: $ => seq(reserve('trim'), '(', optional(reserveMany('both', 'leading', 'trailing')), $.trim_list, ')'),
@@ -572,7 +562,7 @@ module.exports = grammar({
       seq($.xml_passing_mech, $._c_expr),
       seq($.xml_passing_mech, $._c_expr, $.xml_passing_mech)
     )),
-    xml_passing_mech: _ => seq(reserve('by'), reserveMany('ref', 'value')),
+    xml_passing_mech: _ => seq(KW.BY, reserveMany('ref', 'value')),
 
     /* Postgres XML Table */
     xmltable: $ => seq(
@@ -612,7 +602,7 @@ module.exports = grammar({
     ),
     nulls_order: _ => seq(reserve('nulls'), reserveMany('first', 'last')),
     within_group_clause: $ => seq(reserve('within'), reserve('group'),'(', $.order_by_clause, ')'),
-    filter_clause: $ => seq(reserve('filter'), '(', KW.WHERE, $.expr,')'),
+    filter_clause: $ => seq(reserve('filter'), '(', $._kw_where, $.expr,')'),
     _over_clause: $ => seq($._kw_over, field('window', $.window_spec)),
     _partition_clause: $ => seq($._kw_partition, KW.BY, field('partition', $.expr_list)),
     window_spec: $ => choice(
@@ -698,7 +688,7 @@ module.exports = grammar({
     
     // select_spec ~ 7.16 <query specification> in foundation grammar
     select_spec: $ => seq(
-      token(prec(1, reserve('select'))), optional($.set_quantifier),
+      $._kw_select, optional($.set_quantifier),
       field('select_list', $.select_list),
       field('into', optional($.into_clause)),
       field('from', optional($._from_clause)),
@@ -731,7 +721,7 @@ module.exports = grammar({
 
     // Specify a table derived from one or more tables.
     // ~ <from clause> in foundation grammar
-    _from_clause: $ => seq(token(prec(1, KW.FROM)), $.from_list),
+    _from_clause: $ => seq($._kw_from, $.from_list),
     from_list: $ => commaSep1($.table_ref),
     // Reference a table ~ <table reference> in foundation grammar.
     table_ref: $ =>  choice(
@@ -787,7 +777,7 @@ module.exports = grammar({
         reserve('fetch'), reserveMany('first', 'next'),
         optional($.select_fetch_first_val),
         reserveMany('row', 'rows'),
-        choice(reserve('only'), reserveSeq('with', 'ties'))
+        choice(KW.ONLY, reserveSeq('with', 'ties'))
       ),
     ),
     offset_clause: $ => seq(reserve('offset'), choice(
@@ -849,8 +839,8 @@ module.exports = grammar({
     _relation_expr: $ => choice(
       $.path_expr,
       seq($.path_expr,  '*'),
-      seq(reserve('only'), $.path_expr ),
-      seq(reserve('only'), '(', $.path_expr, ')')
+      seq(KW.ONLY, $.path_expr ),
+      seq(KW.ONLY, '(', $.path_expr, ')')
     ),
 
     // Bigquery table_path_expr:
@@ -918,7 +908,7 @@ module.exports = grammar({
     _with_clause: $ => seq(reserve('with'), reserveOpt('recursive'), field('with', $.with_list)),
     with_list: $ => commaSep1($.common_table_expr),
     common_table_expr: $ => seq(
-      $.identifier, optional($.identifier_list), $._kw_as, optional(seq(optNot(), reserve('materialized'))),
+      $.identifier, optional($.identifier_list), $._kw_as, optional(seq(optNot($), reserve('materialized'))),
       '(', $._preparable_stmt, ')', optional($.search_clause), optional($.cycle_clause)
     ),
     _preparable_stmt: $ => choice($._select_stmt),//TOO: add more kind of statements later.
@@ -930,7 +920,7 @@ module.exports = grammar({
       seq(reserve('cycle'), $.identifier_list, reserve('set') , $.identifier, ),
       seq(reserve('cycle'), $.identifier_list, reserve('set'), $.identifier, choice(
         seq(KW.USING, $.identifier),
-        seq(reserve('to'), $._const_expr, KW.DEFAULT, $._const_expr, KW.USING, $.identifier)
+        seq(KW.TO, $._const_expr, KW.DEFAULT, $._const_expr, KW.USING, $.identifier)
       ))
     ), // TODO: change to column_list and column_id later
     
@@ -1052,22 +1042,30 @@ module.exports = grammar({
 
     alter_table_cmds: $ => commaSep1($.alter_table_cmd),
     alter_table_cmd: $ => choice(
-      seq($._kw_add, reserve('column'), optional($.if_not_exists),
-        $.column_def,
-        optional($.column_position),
-        optional($.fill_using_expr)
-      ),
+      $.alter_table_add_column,
+      $.alter_table_add_constraint,
+      $.alter_table_alter_constraint,
+      $.alter_table_drop_constraint
+    ),
+    alter_table_add_column: $ => seq($._kw_add, reserve('column'), optional($.if_not_exists),
+      $.column_def,
+      optional($.column_position),
+      optional($.fill_using_expr)
+    ),
+    alter_table_add_constraint: $ => choice(
       seq($._kw_add, $._primary_key_or_table_constraint_spec),
       seq($._kw_add, $._kw_constraint,
         optional($.if_not_exists), $.identifier, $._primary_key_or_table_constraint_spec
       ),
-      seq($._kw_alter, $._kw_constraint, optional($.if_exists), $.identifier,
-        choice(
-          $.constraint_enforcement,
-          seq($._kw_set, $.options_list)
-        )
-      ),
     ),
+    alter_table_alter_constraint: $ => seq(
+      $._kw_alter, $._kw_constraint, optional($.if_exists), $.identifier,
+      choice(
+        $.constraint_enforcement,
+        seq($._kw_set, $.options_list)
+      )
+    ),
+    alter_table_drop_constraint: $ => seq($._kw_drop, $._kw_constraint, optional($.if_exists), $.identifier),
 
     alter_table: $ => seq(reserve('alter'), choice(
       seq(reserve('table'), optional($.if_exists), $._relation_expr, $.alter_table_cmds),
@@ -1120,8 +1118,8 @@ module.exports = grammar({
   return choice(...exprs);
 } */
 
-function optNot() {
-  return optional(KW.NOT);
+function optNot($) {
+  return optional($._kw_not);
 }
 
 function optOrderBy($) {
@@ -1170,6 +1168,6 @@ function reserveMany(...keywords) {
 function caseInsensitive(keyword) {
   return keyword
     .split('')
-    .map(letter => (letter !== ' ' && letter !== '_') ? `[${letter}${letter.toUpperCase()}]` : letter)
+    .map(letter => (letter !== ' ' && letter !== '_') ? `[${letter.toUpperCase()}${letter.toLowerCase()}]` : letter)
     .join('')
 }

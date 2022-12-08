@@ -2,7 +2,7 @@
 name = "tree-sitter-universql"
 description = "Univeral SQL grammar for the tree-sitter parsing library"
 version = "0.0.1"
-keywords = ["incremental", "parsing", "UniSQL"]
+keywords = ["incremental", "parsing", "sql"]
 categories = ["parsing", "text-editors"]
 repository = "https://github.com/SuperBo/tree-sitter-universql"
 edition = "2018"

@@ -10,7 +10,7 @@ alter table foo.bar ADD constraint a_is_positive check(a>0);
       (identifier)
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (identifier)
         (table_constraint_spec
           (binary_expr
@@ -30,7 +30,7 @@ alter table foo.bar ADD constraint a_is_positive check(a>0) enforced;
       (identifier)
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (identifier)
         (table_constraint_spec
           (binary_expr
@@ -49,7 +49,7 @@ alter table foo.bar add constraint constraint check(a>0);
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (identifier)
         (table_constraint_spec
           (binary_expr
@@ -66,7 +66,7 @@ alter table foo.bar add constraint if not exists constraint check(a>0);
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (if_not_exists)
         (identifier)
         (table_constraint_spec
@@ -84,7 +84,7 @@ alter table foo.bar add constraint check check(a>0);
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (identifier)
         (table_constraint_spec
           (binary_expr
@@ -101,7 +101,7 @@ alter table foo.bar add constraint if not exists check check(a>0);
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (if_not_exists)
         (identifier)
         (table_constraint_spec
@@ -119,7 +119,7 @@ alter table foo.bar add constraint int64 check(a>0);
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (identifier)
         (table_constraint_spec
           (binary_expr
@@ -136,7 +136,7 @@ alter table foo.bar add constraint if not exists int64 check(a>0);
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (if_not_exists)
         (identifier)
         (table_constraint_spec
@@ -154,7 +154,7 @@ alter table foo.bar add check(a>0);
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (binary_expr
             (path_expr (identifier))
@@ -170,7 +170,7 @@ alter table foo.bar add check(a>0) enforced;
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (binary_expr
             (path_expr (identifier))
@@ -187,7 +187,7 @@ alter table foo.bar add check(a>0) not enforced;
   (alter_table
     (path_expr (identifier) (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (binary_expr
             (path_expr (identifier))
@@ -204,7 +204,7 @@ alter table add add constraint if not exists int64 check(a>0);
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (if_not_exists)
         (identifier)
         (table_constraint_spec
@@ -222,7 +222,7 @@ alter table constraint add constraint if not exists int64 check(a>0);
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (if_not_exists)
         (identifier)
         (table_constraint_spec
@@ -284,7 +284,7 @@ ALTER TABLE foo ADD COLUMN bar STRING;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -301,7 +301,7 @@ ALTER TABLE IF EXISTS foo ADD COLUMN bar INT64;
     (if_exists)
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -317,7 +317,7 @@ ALTER TABLE foo ADD COLUMN IF NOT EXISTS bar INT64;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (if_not_exists)
         (column_def
           (identifier)
@@ -335,7 +335,7 @@ ALTER TABLE IF EXISTS foo ADD COLUMN IF NOT EXISTS bar INT64;
     (if_exists)
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (if_not_exists)
         (column_def
           (identifier)
@@ -352,7 +352,7 @@ ALTER TABLE foo ADD COLUMN bar INT64 PRECEDING baz;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -370,7 +370,7 @@ ALTER TABLE foo ADD COLUMN IF NOT EXISTS bar STRING FOLLOWING baz;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -388,7 +388,7 @@ ALTER TABLE foo ADD COLUMN bar STRING NOT NULL FOLLOWING baz;
   (alter_table
     (path_expr (identifier))
   (alter_table_cmds
-    (alter_table_cmd
+    (alter_table_add_column
       (column_def
         (identifier)
         (column_schema
@@ -409,7 +409,7 @@ ALTER TABLE foo ADD COLUMN bar STRING FILL USING a + b;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -429,7 +429,7 @@ ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY ENFORCED FILL USING a
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -455,7 +455,7 @@ ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY not ENFORCED FILL USI
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -481,7 +481,7 @@ ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY fill using a + b;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -506,7 +506,7 @@ ALTER TABLE foo ADD COLUMN bar STRING NOT NULL PRIMARY KEY FILL USING a + b;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -531,7 +531,7 @@ ALTER TABLE foo ADD COLUMN bar STRING FOLLOWING baz FILL USING a + b;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -554,7 +554,7 @@ ALTER TABLE foo ADD COLUMN bar STRING FILL USING a + b, ADD COLUMN baz INT64;
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -563,7 +563,7 @@ ALTER TABLE foo ADD COLUMN bar STRING FILL USING a + b, ADD COLUMN baz INT64;
           (binary_expr
             (path_expr (identifier))
             (path_expr (identifier)))))
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -581,7 +581,7 @@ ALTER TABLE foo ADD COLUMN column STRING FILL USING a + b,
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -590,7 +590,7 @@ ALTER TABLE foo ADD COLUMN column STRING FILL USING a + b,
           (binary_expr
             (path_expr (identifier))
             (path_expr (identifier)))))
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -598,7 +598,7 @@ ALTER TABLE foo ADD COLUMN column STRING FILL USING a + b,
           (col_qual_list
             (col_constraint
               (column_attribute)))))
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -615,7 +615,7 @@ ALTER TABLE foo ADD COLUMN union STRING;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -632,7 +632,7 @@ ALTER TABLE foo ADD COLUMN column STRING COLLATE 'unicode:ci';
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -652,7 +652,7 @@ ALTER TABLE foo ADD COLUMN column STRING COLLATE @a;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -674,7 +674,7 @@ ALTER TABLE foo ADD COLUMN column STRING COLLATE @@ a;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -695,7 +695,7 @@ ALTER TABLE foo ADD column column STRING COLLATE ?;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -716,7 +716,7 @@ ALTER TABLE foo ADD COLUMN column STRING COLLATE CONCAT('unicode', ':', 'ci');
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -740,7 +740,7 @@ ALTER TABLE foo ADD COLUMN bar STRING DEFAULT "default string";
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -758,7 +758,7 @@ ALTER TABLE foo ADD COLUMN bar STRING DEFAULT SESSION_USER();
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_column
         (column_def
           (identifier)
           (column_schema
@@ -778,7 +778,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) options();
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -798,7 +798,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) ENFORCED;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -818,7 +818,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) NOT ENFORCED;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -838,7 +838,7 @@ ALTER TABLE foo ADD CONSTRAINT bar FOREIGN KEY(A) REFERENCES T(B) ENFORCED;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (identifier)
         (table_constraint_spec
           (identifier_list
@@ -859,7 +859,7 @@ ALTER TABLE foo ADD CONSTRAINT foreign FOREIGN KEY(A) REFERENCES T(B) ENFORCED;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (identifier)
         (table_constraint_spec
           (identifier_list
@@ -880,7 +880,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A, B) REFERENCES T(A, B) ENFORCED;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier)
@@ -902,7 +902,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on delete cascade;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -924,7 +924,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on delete no action;
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -947,7 +947,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) match simple;
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -968,7 +968,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) match full;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -988,7 +988,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on update no action;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -1009,7 +1009,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) on update cascade;
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -1030,7 +1030,7 @@ ALTER TABLE foo ADD FOREIGN KEY(A) REFERENCES T(B) match full on update cascade 
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_add_constraint
         (table_constraint_spec
           (identifier_list
             (identifier))
@@ -1054,7 +1054,7 @@ ALTER table foo alter constraint bar;
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_alter_constraint
         (identifier)
         (constraint_enforcement
           (MISSING _kw_enforced))))))
@@ -1070,7 +1070,7 @@ ALTER table foo alter constraint bar enforced;
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_alter_constraint
         (identifier)
         (constraint_enforcement)))))
 
@@ -1085,7 +1085,7 @@ ALTER TABLE foo ALTER CONSTRAINT IF EXISTS bar ENFORCED
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_alter_constraint
         (if_exists)
         (identifier)
         (constraint_enforcement)))))
@@ -1100,7 +1100,7 @@ ALTER TABLE foo ALTER CONSTRAINT bar NOT ENFORCED
   (alter_table
     (path_expr (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_alter_constraint
         (identifier)
         (constraint_enforcement)))))
 
@@ -1115,7 +1115,7 @@ ALTER TABLE foo ALTER CONSTRAINT bar SET OPTIONS()
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_alter_constraint
         (identifier)
         (options_list)))))
 
@@ -1130,7 +1130,7 @@ ALTER TABLE foo ALTER CONSTRAINT IF EXISTS bar SET OPTIONS(opt_a = 1)
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_alter_constraint
         (if_exists)
         (identifier)
         (options_list
@@ -1149,7 +1149,7 @@ ALTER table foo alter constraint bar set options (opt_a = 1, opt_b = 2);
     (path_expr
       (identifier))
     (alter_table_cmds
-      (alter_table_cmd
+      (alter_table_alter_constraint
         (identifier)
         (options_list
           (options_entry
@@ -1158,3 +1158,72 @@ ALTER table foo alter constraint bar set options (opt_a = 1, opt_b = 2);
           (options_entry
             (identifier)
             (integer_literal)))))))
+
+===========================
+Alter table drop constraint
+===========================
+
+alter table foo.bar drop constraint baz;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_drop_constraint
+        (identifier)))))
+
+=====================================
+Alter table drop constraint if exists
+=====================================
+
+alter table foo.bar drop constraint if exists baz;
+---
+(multistmt
+  (alter_table
+    (path_expr (identifier) (identifier))
+    (alter_table_cmds
+      (alter_table_drop_constraint
+        (if_exists)
+        (identifier)))))
+
+===========================
+Alter table constraint drop
+===========================
+
+alter table constraint drop constraint baz;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_drop_constraint
+        (identifier)))))
+
+=====================================
+Alter table constraint drop with name
+=====================================
+
+alter table constraint drop constraint check;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_drop_constraint
+        (identifier)))))
+
+==================================================
+Alter table constraint drop with name 'constraint'
+==================================================
+
+alter table constraint drop constraint constraint;
+---
+(multistmt
+  (alter_table
+    (path_expr
+      (identifier))
+    (alter_table_cmds
+      (alter_table_drop_constraint
+        (identifier)))))
