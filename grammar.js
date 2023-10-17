@@ -47,8 +47,9 @@ module.exports = grammar({
   word: $ => $._unquoted_ident,
 
   inline: $ => [
-    $._string_lit_or_param,
     $._array_construct_prefix,
+    $._column_list,
+    $._string_lit_or_param,
   ],
 
   extras: $ => [
@@ -57,11 +58,12 @@ module.exports = grammar({
   ],
 
   supertypes: $ => [
-    $.expr,
-    $.stmt,
     $._raw_type,
+    $.alter_table_cmd,
+    $.expr,
     $.func_expr_common_subexpr,
-    $.alter_table_cmd
+    $.joined_table,
+    $.stmt,
   ],
 
   rules: {
@@ -132,44 +134,54 @@ module.exports = grammar({
     _kw_if: _ => token(choice(
       'if', 'IF', 'iF', 'If'
     )),
-    _kw_or: _ => token(choice(
-      'or', 'OR', 'oR', 'Or'
-    )),
     _kw_is: _ => token(choice(
       'is', 'IS', 'iS', 'Is'
     )),
-    _kw_where: _ => token(reserve('where')),
-    _kw_struct: _ => token(reserve('struct')),
+    _kw_on: _ => token(choice(
+      'on',' ON',' oN', 'On'
+    )),
+    _kw_or: _ => token(choice(
+      'or', 'OR', 'oR', 'Or'
+    )),
     _kw_add: _ => token(reserve('add')),
     _kw_alter: _ => token(reserve('alter')),
     _kw_analyze: _ => token(/[Aa][Nn][An][Ll][Yy][ZSzs][Ee]/),
     _kw_and: _ => token(reserve('and')),
     _kw_array: _ => token(reserve('array')),
-    _kw_drop: _ => token(reserve('drop')),
-    _kw_from: _ => token(reserve('from')),
     _kw_between: _ => token(reserve('between')),
     _kw_collate: _ => token(reserve('collate')),
     _kw_constraint: _ => token(reserve('constraint')),
+    _kw_cross: _ => token(reserve('cross')),
     _kw_current: _ => token(reserve('current')),
     _kw_default: _ => token(reserve('default')),
+    _kw_drop: _ => token(reserve('drop')),
     _kw_enforced: _ => token(reserve('enforced')),
+    _kw_exist: _ => token(reserve('exists')),
     _kw_fill: _ => token(reserve('fill')),
     _kw_following_preceding: _ => token(reserveMany('following', 'preceding')),
+    _kw_from: _ => token(reserve('from')),
     _kw_group: _ => token(reserve('group')),
     _kw_having: _ => token(reserve('having')),
     _kw_ignore_respects: _ => token(reserveMany('ignore', 'respect')),
+    _kw_join: _ => token(reserve('join')),
     _kw_like_ilike: _ => token(/[Ii]?[Ll][Ii][Kk][Ee]/),
     _kw_limit: _ => token(reserve('limit')),
+    _kw_natural: _ => token(reserve('natural')),
     _kw_not: _ => token(reserve('not')),
     _kw_order: _ => token(reserve('order')),
     _kw_over: _ => token(reserve('over')),
     _kw_partition: _ => token(reserve('partition')),
     _kw_primary: _ => token(reserve('primary')),
+    _kw_recursive: _ => token(reserve('recursive')),
+    _kw_select: _ => token(reserve('select')),
+    _kw_set: _ => token(reserve('set')),
+    _kw_struct: _ => token(reserve('struct')),
     _kw_unbounded: _ => token(reserve('unbounded')),
+    _kw_using: _ => token(reserve('using')),
+    _kw_where: _ => token(reserve('where')),
     _kw_window: _ => token(reserve('window')),
     _kw_window_frame: _ => token(reserveMany('rows', 'range', 'groups')),
-    _kw_set: _ => token(reserve('set')),
-    _kw_select: _ => token(reserve('select')),
+    _kw_with: _ => token(reserve('with')),
 
     /*==== Literals ====*/
     null: _ => token(reserve('null')),
@@ -370,7 +382,7 @@ module.exports = grammar({
       $.func_expr,
       $.array_expr,
       prec(PREC.UMINUS, $.subquery_expr),
-      prec(PREC.UMINUS, $.select_in_parens)
+      prec(PREC.UMINUS, alias($.select_in_parens, $.subquery_expr)),
     ),
     paren_expr: $ => seq('(', $.expr ,')'),
 
@@ -398,8 +410,8 @@ module.exports = grammar({
 
     /* Subquery */
     subquery_expr: $ => choice(
-      seq($._kw_array, $.select_in_parens),
-      seq(reserve('exists'), optional($.hint), $.select_in_parens),
+      seq(field('modifier', $._kw_array), $.select_in_parens),
+      seq(field('modifier', $._kw_exist), optional(field('hint', $.hint)), $.select_in_parens),
     ),
 
     /* Function Expression */
@@ -465,9 +477,9 @@ module.exports = grammar({
      * return a 2-element list that gets disassembled by calling production.
      */
     func_alias_clause: $ => choice(
-			$._alias_clause,
-			seq($._kw_as, optional($.identifier), '(', $.table_func_element_list, ')'),
-			seq($.identifier, '(', $.table_func_element_list, ')'),
+      $._alias_clause,
+      seq($._kw_as, optional($.identifier), '(', $.table_func_element_list, ')'),
+      seq($.identifier, '(', $.table_func_element_list, ')'),
     ),
 
     /* column_ref: $ => choice(
@@ -603,15 +615,15 @@ module.exports = grammar({
     nulls_order: _ => seq(reserve('nulls'), reserveMany('first', 'last')),
     within_group_clause: $ => seq(reserve('within'), reserve('group'),'(', $.order_by_clause, ')'),
     filter_clause: $ => seq(reserve('filter'), '(', $._kw_where, $.expr,')'),
-    _over_clause: $ => seq($._kw_over, field('window', $.window_spec)),
+    _over_clause: $ => seq($._kw_over, field('window', choice($.identifier, $.window_spec))),
     _partition_clause: $ => seq($._kw_partition, KW.BY, field('partition', $.expr_list)),
-    window_spec: $ => choice(
-      $.identifier,
-      seq('(',
-        optional($.identifier), optional($._partition_clause),
-        optOrderBy($), optional($.window_frame_clause),
-        ')'
-      )
+    window_spec: $ => seq(
+      '(',
+      optional($.identifier),
+      optional($._partition_clause),
+      optOrderBy($),
+      optional($.window_frame_clause),
+      ')'
     ),
     window_frame_clause: $ => seq(
       $._kw_window_frame,
@@ -663,9 +675,9 @@ module.exports = grammar({
       seq($._select_clause, $.order_by_clause),
       seq($._select_clause, optOrderBy($), $.for_locking_clause, optional($._select_limit)),
       seq($._select_clause, optOrderBy($), $._select_limit, optional($.for_locking_clause)),
-      seq($._with_clause, $._select_clause, optional($.order_by_clause)),
-      seq($._with_clause, $._select_clause, optional($.order_by_clause), $.for_locking_clause, optional($._select_limit)),
-      seq($._with_clause, $._select_clause, optional($.order_by_clause), $._select_limit, optional($.for_locking_clause)),
+      seq(field('with', $.with_clause), $._select_clause, optional($.order_by_clause)),
+      seq(field('with', $.with_clause), $._select_clause, optional($.order_by_clause), $.for_locking_clause, optional($._select_limit)),
+      seq(field('with', $.with_clause), $._select_clause, optional($.order_by_clause), $._select_limit, optional($.for_locking_clause)),
     ),
     // select_clause ~ <query expression body> in foundation grammar
     _select_clause: $ => choice(
@@ -689,7 +701,7 @@ module.exports = grammar({
     // select_spec ~ 7.16 <query specification> in foundation grammar
     select_spec: $ => seq(
       $._kw_select, optional($.set_quantifier),
-      field('select_list', $.select_list),
+      field('select', $.select_list),
       field('into', optional($.into_clause)),
       field('from', optional($._from_clause)),
       field('where', optional($._where_clause)),
@@ -704,8 +716,8 @@ module.exports = grammar({
 
     into_clause: $ => seq(reserve('into'), $.into_temp_table),
     into_temp_table: $ => choice(
-      seq(optional(reserveMany('local', 'global')), reserve('temporary'), optional(reserve('table')), $.path_expr),
-			seq(optional(reserveMany('local', 'global')), reserve('temp'), optional(reserve('table')), $.path_expr),
+      seq(optional(reserveMany('local', 'global')), reserve('temporary'), reserveOpt('table'), $.path_expr),
+			seq(optional(reserveMany('local', 'global')), reserve('temp'), reserveOpt('table'), $.path_expr),
 			seq(reserve('unlogged'), optional(reserve('table')), $.path_expr),
 			seq(reserve('table'), $.path_expr),
       $.path_expr
@@ -730,18 +742,22 @@ module.exports = grammar({
       seq(reserveOpt('lateral'), $.xmltable, optional($._alias_clause)),
       seq(reserveOpt('lateral'), alias($.select_in_parens, $.subquery_table), optional($._alias_clause)),
       $.joined_table,
-      seq('(', $.joined_table , ')', $._alias_clause),
+      seq($.paren_join, $._alias_clause),
     ),
 
     joined_table: $ => choice(
-      seq('(', $.joined_table, ')'),
-      prec.left(0, seq($.table_ref, reserve('cross'), KW.JOIN, $.table_ref)), // Cross Join
-      prec.left(0, seq($.table_ref, $.join_type, KW.JOIN, $.table_ref, $.join_spec)),// Qualified Join
-      prec.left(0, seq($.table_ref, reserve('natural'), optional($.join_type), KW.JOIN, $.table_ref)) // Natural Join
+      $.paren_join,
+      $.cross_join,
+      $.natural_join,
+      $.qualified_join
     ),
+    paren_join: $ => seq('(', $.joined_table, ')'),
+    cross_join: $ => prec.left(0, seq($.table_ref, $._kw_cross, $._kw_join, $.table_ref)),
+    natural_join: $ => prec.left(0, seq($.table_ref, $._kw_natural, optional($.join_type), $._kw_join, $.table_ref)),
+    qualified_join: $ => seq($.table_ref, /*optional($.join_type),*/ $._kw_join, $.table_ref, $.join_spec),
     join_spec: $ => choice(
-      seq(reserve('using'), $._column_list),
-      seq(reserve('on'), $.expr)
+      seq($._kw_on, $.expr),
+      seq($._kw_using, $._column_list),
     ),
     identifier_list: $ => commaSep1($.identifier),
     join_type: _ => choice(
@@ -767,28 +783,29 @@ module.exports = grammar({
     table_func_element: $ => seq($.identifier, $.type),
 
     _select_limit: $ => choice(
-      seq(field('limit', $.limit_clause), optional(field('offset', $.offset_clause))),
-      seq(field('offset', $.offset_clause), optional(field('limit', $.limit_clause)))
+      $._limit_offset,
+      seq(field('offset', $.offset_clause), optional(field('fetch', $.fetch_clause)))
     ),
-    _limit_offset: $ => seq($.limit_clause, optional($.offset_clause)),
-    limit_clause: $ => choice(
-      seq($._kw_limit, $._select_limit_val),
-      seq(
-        reserve('fetch'), reserveMany('first', 'next'),
-        optional($.select_fetch_first_val),
-        reserveMany('row', 'rows'),
-        choice(KW.ONLY, reserveSeq('with', 'ties'))
-      ),
+    _limit_offset: $ => seq(field('limit', $.limit_clause), optional(field('offset', $.offset_clause))),
+    limit_clause: $ => seq($._kw_limit, $._select_limit_val),
+    fetch_clause: $ => seq(
+      reserve('fetch'), reserveMany('first', 'next'),
+      $.select_fetch_val,
+      reserveMany('row', 'rows'),
+      choice(KW.ONLY, reserveSeq('with', 'ties'))
     ),
     offset_clause: $ => seq(reserve('offset'), choice(
       $.expr,
-      seq($.select_fetch_first_val, reserveMany('row', 'rows'))
+      seq($.select_offset_val, reserveMany('row', 'rows'))
     )),
     _select_limit_val: $ => choice(reserve('all'), $.expr,),
-    select_fetch_first_val: $ => choice(
+    select_offset_val: $ => choice(
       $._c_expr,
       seq(/\+|-/, $.integer_literal),
-      seq(/\+|-/, $.float_literal)
+      seq(/\+|-/, $.float_literal),
+    ),
+    select_fetch_val: $ => seq(
+      $._c_expr, reserveOpt('percent')
     ),
 
     /* TABLESAMPLE decoration in a FROM item */
@@ -856,7 +873,7 @@ module.exports = grammar({
     join_hint: reserveMany('hash', 'lookup'), */
 
     /* Where clause in select */
-    _where_clause: $ => seq(token(prec(1, reserve('where'))), $.expr),
+    _where_clause: $ => seq($._kw_where, $.expr),
     /* Group by and having clause */
     _group_by_clause: $ => seq($._kw_group, KW.BY, optional($.set_quantifier), $.group_by_list),
     group_by_list: $ => commaSep1($._group_by_item),
@@ -905,10 +922,12 @@ module.exports = grammar({
      *		AS (query) [ SEARCH or CYCLE clause ]
      */
 
-    _with_clause: $ => seq(reserve('with'), reserveOpt('recursive'), field('with', $.with_list)),
+    with_clause: $ => seq($._kw_with, optional($.with_recursive), $.with_list),
+    with_recursive: $ => $._kw_recursive,
     with_list: $ => commaSep1($.common_table_expr),
     common_table_expr: $ => seq(
-      $.identifier, optional($.identifier_list), $._kw_as, optional(seq(optNot($), reserve('materialized'))),
+      $.identifier, optional($._column_list), $._kw_as,
+      optional(seq(optNot($), reserve('materialized'))),
       '(', $._preparable_stmt, ')', optional($.search_clause), optional($.cycle_clause)
     ),
     _preparable_stmt: $ => choice($._select_stmt),//TOO: add more kind of statements later.

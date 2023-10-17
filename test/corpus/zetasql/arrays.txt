@@ -52,7 +52,7 @@ select [x, f(x), x + f(x), (select x)]
                     (path_expr (identifier))
                     (func_arg_list
                       (path_expr (identifier))))))
-              (select_in_parens
+              (subquery_expr
                 (select
                   (select_spec
                     (select_list

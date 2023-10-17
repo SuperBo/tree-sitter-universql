@@ -48,7 +48,7 @@ select
       (comment)
       (comment)
       (comment)
-      select_list: (select_list
+      select: (select_list
         (select_item
           (binary_expr
             (binary_expr
@@ -73,7 +73,7 @@ block
   (select
     (select_spec
       (comment)
-      select_list: (select_list
+      select: (select_list
         (select_item
           (binary_expr
             (path_expr
